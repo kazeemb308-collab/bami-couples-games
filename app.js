@@ -198,15 +198,15 @@ function moveLudo(g,p,colour,tokenIndex){
  if(landing!==null&&!LUDO_SAFE.has(landing)){
   for(let col=0;col<4;col++)if(ludoOwner(col)!==p){
    const enemies=(g.tokens[String(col)]||[]).map((v,i)=>({v,i})).filter(x=>x.v>=0&&x.v<=51&&ludoGlobal(col,x.v)===landing);
-   if(enemies.length===1){g.tokens[String(col)][enemies[0].i]=-1;captured=true;}
+   if(enemies.length===1){g.tokens[String(col)][enemies[0].i]=-1;captured=true;own[tokenIndex]=57;}
   }
  }
  if(captured)g.hasCaptured[String(p)]=true;
  const finished=own[tokenIndex]===57,allColours=p===0?[0,1]:[2,3],allHome=allColours.every(col=>g.tokens[String(col)].every(v=>v===57));
  const colName=LUDO_COLOURS[colour].name.toLowerCase();
  if(allHome){g.winner=room.players[p].name;g.message=g.winner+" wins Naija Ludo! 🏆";}
+ else if(captured)g.message=room.players[p].name+" captured an opponent seed! Their seed returned to base and your attacking seed is Home!";
  else if(finished)g.message=room.players[p].name+" brought a "+colName+" seed Home!";
- else if(captured)g.message=room.players[p].name+" captured an opponent seed!";
  else if(before===-1)g.message=room.players[p].name+" brought a "+colName+" seed out of the yard.";
  else g.message=room.players[p].name+" moved a "+colName+" seed by "+dice+".";
  g.usedDice[dieIndex]=true;g.dice=null;g.selectedDie=null;
