@@ -146,12 +146,20 @@ function moveLudo(g,p,tokenIndex){
  const extra=dice===6||captured||finished;g.dice=null;if(!g.winner&&!extra)g.turn=1-p;
 }
 function renderWhot(g){
- const p=me(),hand=g.hands[p]||[],top=g.top;
- let h='<div class="center"><div class="whot-status"><div class="muted">TOP CARD</div><div class="playingcard top-playing-card '+(top.s===5?"whot-card":"suit-"+top.s)+'"><span>'+esc(cardLabel(top))+'</span><span class="shape">'+esc(cardShape(top))+'</span><span>'+esc(top.s===5?(g.calledShape===null?"CALL A SHAPE":shapeNames[g.calledShape]):shapeNames[top.s])+(top.s===5?"":"")+'</span></div><p>'+esc(g.message)+'</p><p class="muted">Your cards: '+hand.length+' · Partner: '+((g.hands[1-p]||[]).length)+'</p><p class="muted">Turn: '+myName(g.turn)+'</p>'+(g.pendingPenalty?'<p class="penalty-banner">PICK '+(g.pendingPenalty.type===2?"TWO":"THREE")+' · Draw '+g.pendingPenalty.amount+' or defend with another '+g.pendingPenalty.type+'</p>':'')+'</div>';
- if(g.pendingShapePlayer===p&&g.pendingShapeIndex!==null){h+='<div class="shape-picker"><b>Choose the shape</b><div class="shape-options">'+shapeNames.map((n,i)=>'<button class="shape-choice" data-shape="'+i+'">'+shapeGlyphs[i]+'<small>'+n+'</small></button>').join("")+'</div></div>';}
+ const p=me(),hand=g.hands[p]||[],opponent=1-p,opponentHand=g.hands[opponent]||[],top=g.top;
+ const playable=hand.some(c=>whotCanPlay(c,g));
+ let h='<div class="naija-whot-table">';
+ h+='<div class="whot-opponent"><div class="whot-player-badge"><span class="whot-avatar">♥</span><span><b>'+myName(opponent)+'</b><small>OPPONENT · '+opponentHand.length+' CARDS</small></span></div><div class="opponent-hand">'+opponentHand.map(()=>'<span class="card-back"><i>W</i><small>NAIJA WHOT</small></span>').join('')+'</div></div>';
+ h+='<div class="whot-arena"><div class="whot-pile"><small>MARKET</small><button id="drawPile" class="playingcard card-back market-card" '+(g.turn!==p||g.winner||room.players.length<2||g.pendingShapePlayer!==null?'disabled':'')+'><i>W</i><small>DRAW</small></button><b>'+g.deck.length+' left</b></div>';
+ h+='<div class="whot-pile discard-pile"><small>PLAYING CARD</small><div class="playingcard top-playing-card '+(top.s===5?"whot-card":"suit-"+top.s)+'"><span>'+esc(cardLabel(top))+'</span><span class="shape">'+esc(cardShape(top))+'</span><span>'+(top.s===5?esc(g.calledShape===null?"CALL A SHAPE":shapeNames[g.calledShape]):esc(shapeNames[top.s]))+'</span></div><b>DISCARD PILE</b></div></div>';
+ h+='<div class="whot-turn-strip '+(g.turn===p?'your-turn':'')+'"><span>'+(g.winner?'🏆 GAME OVER':g.turn===p?'✨ YOUR TURN':'⏳ OPPONENT’S TURN')+'</span><span>'+hand.length+' cards in your hand</span></div>';
+ h+='<p class="whot-message">'+esc(g.message)+'</p>';
+ if(g.pendingShapePlayer===p&&g.pendingShapeIndex!==null){h+='<div class="shape-picker"><b>WHOT 20 — choose your shape</b><div class="shape-options">'+shapeNames.map((n,i)=>'<button class="shape-choice" data-shape="'+i+'"><span>'+shapeGlyphs[i]+'</span><small>'+n+'</small></button>').join("")+'</div></div>';}
  else if(g.pendingShapePlayer!==null){h+='<p class="notice">Your partner is choosing a shape…</p>';}
- h+='<div class="cards whot-hand">'+hand.map((c,i)=>'<button class="playingcard '+(c.s===5?"whot-card":"suit-"+c.s)+'" data-card="'+i+'" '+(g.turn!==p||g.winner||room.players.length<2||g.pendingShapePlayer!==null?'disabled':'')+'><span>'+esc(cardLabel(c))+'</span><span class="shape">'+esc(cardShape(c))+'</span><span>'+(c.s===5?"CALL A SHAPE":esc(shapeNames[c.s]))+'</span></button>').join("")+'</div>';
- h+='<div class="actions center-actions"><button id="drawCard" class="gold" '+(g.turn!==p||g.winner||room.players.length<2||g.pendingShapePlayer!==null?'disabled':'')+'>'+(g.pendingPenalty?"Draw "+g.pendingPenalty.amount+" cards":"Draw from Market")+'</button><button id="resetWhot" class="secondary">Restart WHOT</button></div><p class="notice">Naija rules: 1 Hold On · 2 Pick Two (defend/stack) · 5 Pick Three (defend/stack) · 8 Suspension · 14 General Market · WHOT 20 calls a shape. The deck has 54 cards.</p></div>';
+ h+='<div class="whot-hand-title"><b>YOUR CARDS</b><small>'+(playable?'Play a matching number or shape':'No matching card? Draw from the market')+'</small></div>';
+ h+='<div class="cards whot-hand">'+hand.map((c,i)=>'<button class="playingcard '+(c.s===5?"whot-card":"suit-"+c.s)+'" data-card="'+i+'" '+(g.turn!==p||g.winner||room.players.length<2||g.pendingShapePlayer!==null?'disabled':'')+'><span>'+esc(cardLabel(c))+'</span><span class="shape">'+esc(cardShape(c))+'</span><span>'+(c.s===5?"WHOT":esc(shapeNames[c.s]))+'</span></button>').join("")+'</div>';
+ h+='<div class="actions center-actions"><button id="drawCard" class="gold" '+(g.turn!==p||g.winner||room.players.length<2||g.pendingShapePlayer!==null?'disabled':'')+'>'+(g.pendingPenalty?"Pick "+g.pendingPenalty.amount+" cards":"Draw from Market")+'</button><button id="resetWhot" class="secondary">Restart WHOT</button></div>';
+ h+='<p class="notice">Naija WHOT rules: 1 Hold On · 2 Pick Two · 5 Pick Three · 8 Suspension · 14 General Market · WHOT 20 lets you call a shape.</p></div>';
  return h;
 }
 function renderLudo(g){
