@@ -418,6 +418,17 @@ body:has(#gameArea .ludo-wrap) main{width:100%;max-width:none;padding:0!importan
  #gameArea:has(.ludo-wrap) .token-pick{min-height:35px}
 }
 
+
+/* Individually selectable Ludo dice results */
+#gameArea:has(.ludo-wrap) .center-dice-select{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:1px;box-sizing:border-box}
+#gameArea:has(.ludo-wrap) .center-dice-select .center-dice-pair{height:78%;gap:3px}
+#gameArea:has(.ludo-wrap) .center-dice-select .die-choice{width:44%;height:100%;min-width:0;min-height:0;padding:1px 0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;border:1px solid #cfc6b5;border-radius:4px;background:linear-gradient(145deg,#fffef8,#e8dfcc);color:#18243a;font-size:clamp(8px,2vw,20px);line-height:1;box-shadow:0 2px 0 #b6a991,0 3px 4px #0004;touch-action:manipulation}
+#gameArea:has(.ludo-wrap) .center-dice-select .die-choice span{font-size:clamp(13px,3vw,27px);line-height:1}
+#gameArea:has(.ludo-wrap) .center-dice-select .die-choice b{font-size:clamp(8px,1.5vw,13px);margin-top:2px}
+#gameArea:has(.ludo-wrap) .center-dice-select .die-choice.selected{outline:2px solid #ffd45f;outline-offset:0;background:#ffe18a;transform:translateY(-2px);box-shadow:0 3px 0 #b38b2b,0 0 7px #ffd45f88}
+#gameArea:has(.ludo-wrap) .center-dice-select .die-choice.used{opacity:.28;filter:grayscale(1);box-shadow:none}
+#gameArea:has(.ludo-wrap) .center-dice-select small{font-size:clamp(4px,.8vw,7px);font-weight:1000;line-height:1.1;color:#ffdf7b;letter-spacing:.2px;text-align:center}
+
 </style>
 </head><body>
 <header><div class="brand">Bami <span>&</span> Oluwatosin <span>♥</span></div><div class="status" id="connectionStatus">Connecting…<br>Private couple room</div></header>
