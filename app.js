@@ -4,6 +4,7 @@ let db = null, auth = null, roomId = null, playerId = null, room = null, unsubsc
 const shapeNames = ["Circle","Triangle","Cross","Square","Star"];
 const shapeGlyphs = ["○","△","×","□","☆"];
 const whotNumbers = [1,2,3,4,5,7,8,10,11,12,13,14];
+const whotSuitNumbers = [[1,2,3,4,5,7,8,10,11,12,13,14],[1,2,3,4,5,7,8,10,11,12,13,14],[1,2,3,5,7,10,11,13,14],[1,2,3,5,7,10,11,13,14],[1,2,3,4,5,7,8]];
 const quiz = [
  ["What is your partner's favourite way to receive love?",["Words","Quality time","Gifts","Acts of service"]],
  ["What would make the perfect date?",["Cosy movie night","Food adventure","A day outdoors","A surprise plan"]],
@@ -18,18 +19,18 @@ const truths = ["What was your first impression of your partner?","What little t
 const dares = ["Send a 10-second voice note saying something sweet.","Give your partner a cute new nickname.","Describe your partner using only three emojis.","Give your partner a sincere compliment.","Make up a two-line love song.","Send your best dramatic 'I miss you' message.","Name three things you find attractive about your partner.","Recreate your partner's favourite emoji with your face."];
 const LUDO_PATH = (() => {
  const p=[];
- for(let c=0;c<=5;c++)p.push([6,c]);
+ for(let c=1;c<=5;c++)p.push([6,c]);
  for(let r=5;r>=0;r--)p.push([r,6]);
  p.push([0,7],[0,8]);
  for(let r=1;r<=5;r++)p.push([r,8]);
  for(let c=9;c<=14;c++)p.push([6,c]);
- p.push([7,14]);
- for(let c=13;c>=8;c--)p.push([8,c]);
+ p.push([7,14],[8,14]);
+ for(let c=13;c>=9;c--)p.push([8,c]);
  for(let r=9;r<=14;r++)p.push([r,8]);
  p.push([14,7],[14,6]);
  for(let r=13;r>=9;r--)p.push([r,6]);
  for(let c=5;c>=0;c--)p.push([8,c]);
- p.push([7,0]);
+ p.push([7,0],[6,0]);
  return p;
 })();
 const LUDO_SAFE = new Set([0,8,13,21,26,34,39,47]);
@@ -40,12 +41,12 @@ function playerName(){return $("playerName").value.trim().slice(0,24)||"Player";
 function roomCode(){const chars="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";let out="";for(let i=0;i<6;i++)out+=chars[Math.floor(Math.random()*chars.length)];return out;}
 function configOK(){return firebaseConfig.apiKey&&!firebaseConfig.apiKey.includes("PASTE_")&&firebaseConfig.projectId&&!firebaseConfig.projectId.includes("PASTE_")&&firebaseConfig.appId&&!firebaseConfig.appId.includes("PASTE_");}
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
-function makeWhotDeck(){const a=[];for(let s=0;s<5;s++)for(const n of whotNumbers)a.push({s,n});for(let n=0;n<5;n++)a.push({s:5,n:5});return shuffle(a);}
+function makeWhotDeck(){const a=[];whotSuitNumbers.forEach((numbers,s)=>numbers.forEach(n=>a.push({s,n})));for(let n=0;n<5;n++)a.push({s:5,n:20});return shuffle(a);}
 function newWhot(){
  const d=makeWhotDeck(),hands={"0":d.slice(0,6),"1":d.slice(6,12)};
  let rest=d.slice(12),topIndex=rest.findIndex(c=>c.s!==5);if(topIndex<0)topIndex=0;
  const top=rest.splice(topIndex,1)[0];
- return {deck:rest,discard:[],hands,top,calledShape:null,turn:0,winner:"",pendingShapeIndex:null,pendingShapePlayer:null,message:"Match the shape or number. Special cards: 1 Hold On, 2 Pick Two, 5 WHOT, 8 Suspension, 14 General Market."};
+ return {deck:rest,discard:[],hands,top,calledShape:null,turn:0,winner:"",pendingShapeIndex:null,pendingShapePlayer:null,pendingPenalty:null,message:"Naija WHOT: match shape or number. 1 Hold On · 2 Pick Two · 5 Pick Three · 8 Suspension · 14 General Market · WHOT 20 calls a shape."};
 }
 function newLudo(){return {tokens:{"0":[-1,-1,-1,-1],"1":[-1,-1,-1,-1]},turn:0,dice:null,winner:"",message:"Roll a 6 to bring a token out of the yard. Reach Home with an exact roll."};}
 function initialState(){return {ttt:{cells:Array(9).fill(""),turn:"X",winner:"",moves:0},whot:newWhot(),ludo:newLudo(),quiz:{index:0,answers:{},scores:[0,0]},truth:{turn:0,prompt:"Choose Truth or Dare to begin."}};}
@@ -93,26 +94,34 @@ async function change(fn){
  try{await runTransaction(db,async tx=>{const ref=doc(db,"coupleRooms",roomId),snap=await tx.get(ref);if(!snap.exists())throw Error("Room not found.");const data=snap.data(),state=structuredClone(data.state);fn(state,data);tx.update(ref,{state});});}
  catch(e){say(e.message);}
 }
-function cardLabel(c){return c.s===5?"WHOT":String(c.n);}
-function cardShape(c){return c.s===5?"★":shapeGlyphs[c.s];}
+function cardLabel(c){return c.s===5?"20":String(c.n);}
+function cardShape(c){return c.s===5?"WHOT!":shapeGlyphs[c.s];}
 function drawWhotCard(g){
  if(!g.deck.length&&g.discard.length){g.deck=shuffle(g.discard);g.discard=[];}
  return g.deck.length?g.deck.pop():null;
 }
-function whotCanPlay(c,g){const activeShape=g.top.s===5?g.calledShape:g.top.s;return c.s===5||c.s===activeShape||c.n===g.top.n;}
+function whotCanPlay(c,g){if(g.pendingPenalty)return c.n===g.pendingPenalty.type;const activeShape=g.top.s===5?g.calledShape:g.top.s;return c.s===5||c.s===activeShape||c.n===g.top.n;}
 function playWhotCard(g,p,i,chosenShape){
  const hand=g.hands[p]||[],c=hand[i];if(!c)return false;
- if(c.s===5&&chosenShape===undefined){g.pendingShapeIndex=i;g.pendingShapePlayer=p;g.message="Choose a shape for your WHOT card.";return false;}
- if(!whotCanPlay(c,g)){g.message="That card cannot be played. Match the shape or number, or use WHOT.";return false;}
+ if(c.s===5&&chosenShape===undefined){g.pendingShapeIndex=i;g.pendingShapePlayer=p;g.message="Choose the shape you want to call with WHOT 20.";return false;}
+ if(!whotCanPlay(c,g)){g.message=g.pendingPenalty?"Defend with another "+g.pendingPenalty.type+" or draw "+g.pendingPenalty.amount+" cards.":"That card cannot be played. Match the shape or number, or use WHOT 20.";return false;}
  if(c.s===5&&(!Number.isInteger(chosenShape)||chosenShape<0||chosenShape>4))return false;
- hand.splice(i,1);g.discard.push(g.top);g.top=c;g.calledShape=c.s===5?chosenShape:null;g.pendingShapeIndex=null;g.pendingShapePlayer=null;
- if(!hand.length){g.winner=room.players[p].name;g.message=g.winner+" wins WHOT! 🎉";return true;}
+ const oldPenalty=g.pendingPenalty?{...g.pendingPenalty}:null;
+ hand.splice(i,1);g.discard.push(g.top);g.top=c;g.calledShape=c.s===5?chosenShape:null;g.pendingShapeIndex=null;g.pendingShapePlayer=null;g.pendingPenalty=null;
+ if(!hand.length){g.winner=room.players[p].name;g.message=g.winner+" wins Naija WHOT! 🎉";return true;}
  const opponent=1-p;
- if(c.n===2&&c.s!==5){for(let n=0;n<2;n++){const drawn=drawWhotCard(g);if(drawn)g.hands[opponent].push(drawn);}g.turn=p;g.message=room.players[p].name+" played Pick Two. "+room.players[opponent].name+" draws two and misses the turn.";}
- else if(c.n===8){g.turn=p;g.message=room.players[p].name+" played Suspension. They play again.";}
- else if(c.n===1){g.turn=p;g.message="Hold On! "+room.players[p].name+" plays again.";}
- else if(c.n===14){const drawn=drawWhotCard(g);if(drawn)g.hands[opponent].push(drawn);g.turn=p;g.message="General Market! "+room.players[opponent].name+" picks a card; "+room.players[p].name+" plays again.";}
- else{g.turn=opponent;g.message=room.players[p].name+" played "+cardLabel(c)+(c.s===5?" and called "+shapeNames[chosenShape]:"")+".";}
+ if(oldPenalty){
+  const amount=oldPenalty.amount+(c.n===oldPenalty.type?(c.n===2?2:3):0);
+  g.pendingPenalty={type:oldPenalty.type,amount,player:opponent};g.turn=opponent;
+  g.message=room.players[p].name+" defended the Pick "+(oldPenalty.type===2?"Two":"Three")+"! The next player must defend or draw "+amount+" cards.";
+ }else if(c.n===2&&c.s!==5){
+  g.pendingPenalty={type:2,amount:2,player:opponent};g.turn=opponent;g.message="Pick Two! "+room.players[opponent].name+" can defend with another 2 or draw 2 cards.";
+ }else if(c.n===5&&c.s!==5){
+  g.pendingPenalty={type:5,amount:3,player:opponent};g.turn=opponent;g.message="Pick Three! "+room.players[opponent].name+" can defend with another 5 or draw 3 cards.";
+ }else if(c.n===8&&c.s!==5){g.turn=p;g.message="Suspension! "+room.players[opponent].name+" misses a turn.";}
+ else if(c.n===1&&c.s!==5){g.turn=p;g.message="Hold On! "+room.players[p].name+" plays again.";}
+ else if(c.n===14&&c.s!==5){const drawn=drawWhotCard(g);if(drawn)g.hands[opponent].push(drawn);g.turn=opponent;g.message="General Market! "+room.players[opponent].name+" picks one card.";}
+ else{g.turn=opponent;g.message=room.players[p].name+" played "+(c.s===5?"WHOT 20 and called "+shapeNames[chosenShape]:cardLabel(c)+" "+shapeNames[c.s])+".";}
  return true;
 }
 function ludoCanMove(pos,dice){if(dice===null||dice===undefined)return false;if(pos===-1)return dice===6;if(pos===57)return false;return pos+dice<=57;}
@@ -138,11 +147,11 @@ function moveLudo(g,p,tokenIndex){
 }
 function renderWhot(g){
  const p=me(),hand=g.hands[p]||[],top=g.top;
- let h='<div class="center"><div class="whot-status"><div class="muted">TOP CARD</div><div class="playingcard top-playing-card"><span>'+esc(cardLabel(top))+'</span><span class="shape">'+esc(cardShape(top))+'</span><span>'+esc(top.s===5?(g.calledShape===null?"Choose a shape":shapeNames[g.calledShape]):shapeNames[top.s])+'</span></div><p>'+esc(g.message)+'</p><p class="muted">Your cards: '+hand.length+' · Partner: '+((g.hands[1-p]||[]).length)+'</p><p class="muted">Turn: '+myName(g.turn)+'</p></div>';
+ let h='<div class="center"><div class="whot-status"><div class="muted">TOP CARD</div><div class="playingcard top-playing-card '+(top.s===5?"whot-card":"suit-"+top.s)+'"><span>'+esc(cardLabel(top))+'</span><span class="shape">'+esc(cardShape(top))+'</span><span>'+esc(top.s===5?(g.calledShape===null?"CALL A SHAPE":shapeNames[g.calledShape]):shapeNames[top.s])+(top.s===5?"":"")+'</span></div><p>'+esc(g.message)+'</p><p class="muted">Your cards: '+hand.length+' · Partner: '+((g.hands[1-p]||[]).length)+'</p><p class="muted">Turn: '+myName(g.turn)+'</p>'+(g.pendingPenalty?'<p class="penalty-banner">PICK '+(g.pendingPenalty.type===2?"TWO":"THREE")+' · Draw '+g.pendingPenalty.amount+' or defend with another '+g.pendingPenalty.type+'</p>':'')+'</div>';
  if(g.pendingShapePlayer===p&&g.pendingShapeIndex!==null){h+='<div class="shape-picker"><b>Choose the shape</b><div class="shape-options">'+shapeNames.map((n,i)=>'<button class="shape-choice" data-shape="'+i+'">'+shapeGlyphs[i]+'<small>'+n+'</small></button>').join("")+'</div></div>';}
  else if(g.pendingShapePlayer!==null){h+='<p class="notice">Your partner is choosing a shape…</p>';}
- h+='<div class="cards whot-hand">'+hand.map((c,i)=>'<button class="playingcard '+(c.s===5?"whot-card":"")+'" data-card="'+i+'" '+(g.turn!==p||g.winner||room.players.length<2||g.pendingShapePlayer!==null?'disabled':'')+'><span>'+esc(cardLabel(c))+'</span><span class="shape">'+esc(cardShape(c))+'</span><span>'+(c.s===5?"CALL A SHAPE":esc(shapeNames[c.s]))+'</span></button>').join("")+'</div>';
- h+='<div class="actions center-actions"><button id="drawCard" class="gold" '+(g.turn!==p||g.winner||room.players.length<2||g.pendingShapePlayer!==null?'disabled':'')+'>Draw card</button><button id="resetWhot" class="secondary">Restart WHOT</button></div><p class="notice">Rules used: 1 Hold On · 2 Pick Two · 5 WHOT (choose a shape) · 8 Suspension · 14 General Market. Rules vary by household.</p></div>';
+ h+='<div class="cards whot-hand">'+hand.map((c,i)=>'<button class="playingcard '+(c.s===5?"whot-card":"suit-"+c.s)+'" data-card="'+i+'" '+(g.turn!==p||g.winner||room.players.length<2||g.pendingShapePlayer!==null?'disabled':'')+'><span>'+esc(cardLabel(c))+'</span><span class="shape">'+esc(cardShape(c))+'</span><span>'+(c.s===5?"CALL A SHAPE":esc(shapeNames[c.s]))+'</span></button>').join("")+'</div>';
+ h+='<div class="actions center-actions"><button id="drawCard" class="gold" '+(g.turn!==p||g.winner||room.players.length<2||g.pendingShapePlayer!==null?'disabled':'')+'>'+(g.pendingPenalty?"Draw "+g.pendingPenalty.amount+" cards":"Draw from Market")+'</button><button id="resetWhot" class="secondary">Restart WHOT</button></div><p class="notice">Naija rules: 1 Hold On · 2 Pick Two (defend/stack) · 5 Pick Three (defend/stack) · 8 Suspension · 14 General Market · WHOT 20 calls a shape. The deck has 54 cards.</p></div>';
  return h;
 }
 function renderLudo(g){
@@ -157,8 +166,12 @@ function renderLudo(g){
 function ludoPosLabel(v){if(v===-1)return "Yard";if(v===57)return "Home";if(v>=52)return "Home lane "+(v-51);return "Track "+(v+1);}
 function renderLudoBoard(g){
  const pathMap={};LUDO_PATH.forEach((rc,i)=>pathMap[rc[0]+","+rc[1]]=i);
- const homeMap={};for(let i=0;i<5;i++){homeMap["7,"+(i+1)]={p:0,step:i};homeMap["7,"+(13-i)]={p:1,step:i};}
- let out='<div class="ludo-board" role="img" aria-label="Ludo board with two players and four tokens each">';
+ const homeMap={};
+ for(let i=0;i<5;i++){homeMap["7,"+(i+1)]={p:0,step:i};homeMap["7,"+(13-i)]={p:1,step:i};homeMap[(i+1)+",7"]={p:2,step:i};homeMap[(13-i)+",7"]={p:3,step:i};}
+ const yardMap={};
+ const yardDefs=[{p:0,cells:[[1,1],[1,4],[4,1],[4,4]]},{p:1,cells:[[10,10],[10,13],[13,10],[13,13]]}];
+ yardDefs.forEach(d=>d.cells.forEach((rc,i)=>yardMap[rc.join(",")]={p:d.p,i}));
+ let out='<div class="ludo-board" role="img" aria-label="Classic four-colour Ludo board. Red and blue are the two playable homes.">';
  for(let r=0;r<15;r++)for(let c=0;c<15;c++){
   const key=r+","+c,trackIndex=pathMap[key],lane=homeMap[key];let cls="ludo-cell",content="";
   if(trackIndex!==undefined){
@@ -168,14 +181,16 @@ function renderLudoBoard(g){
    content=(LUDO_SAFE.has(trackIndex)?"★":"")+pieces.join("");
    if(trackIndex===LUDO_START[0])cls+=" red-start";if(trackIndex===LUDO_START[1])cls+=" blue-start";
   }else if(lane){
-   cls+=" home-lane "+(lane.p===0?"red-lane":"blue-lane");
-   const pos=52+lane.step;const pieces=[];g.tokens[String(lane.p)].forEach((v,i)=>{if(v===pos)pieces.push('<span class="board-token '+(lane.p===0?"red-token-bg":"blue-token-bg")+'">'+(i+1)+'</span>');});
-   content=pieces.join("")||(lane.step===4?"◆":"");
-  }else if(r<=5&&c<=5){cls+=" base-red";if(r===2&&c===2)content="YARD";}
-  else if(r<=5&&c>=9){cls+=" base-blue";if(r===2&&c===12)content="YARD";}
-  else if(r>=9&&c<=5){cls+=" base-blue";}
-  else if(r>=9&&c>=9){cls+=" base-red";if(r===12&&c===12)content="YARD";}
-  if(r===7&&c===6) {cls+=" center-red";content="";}if(r===7&&c===7){cls+=" center-home";content="♥";}if(r===7&&c===8){cls+=" center-blue";content="";}
+   const laneColor=["red-lane","blue-lane","green-lane","yellow-lane"][lane.p];cls+=" home-lane "+laneColor;
+   if(lane.p<2){const pos=52+lane.step;const pieces=[];g.tokens[String(lane.p)].forEach((v,i)=>{if(v===pos)pieces.push('<span class="board-token '+(lane.p===0?"red-token-bg":"blue-token-bg")+'">'+(i+1)+'</span>');});content=pieces.join("")||(lane.step===4?"◆":"");}
+   else content=lane.step===4?"◆":"";
+  }else if(r<=5&&c<=5){cls+=" base-red";}
+  else if(r<=5&&c>=9){cls+=" base-green";}
+  else if(r>=9&&c<=5){cls+=" base-yellow";}
+  else if(r>=9&&c>=9){cls+=" base-blue";}
+  if(r>=6&&r<=8&&c>=6&&c<=8){cls+=" center-home";if(r===7&&c===7)content="♥";else if(r===6&&c===6)cls+=" center-red";else if(r===6&&c===8)cls+=" center-green";else if(r===8&&c===6)cls+=" center-yellow";else if(r===8&&c===8)cls+=" center-blue";}
+  const yard=yardMap[key];
+  if(yard){const p=yard.p,tokenIndex=yard.i,pos=g.tokens[String(p)][tokenIndex];cls+=" yard-cell "+(p===0?"yard-red":"yard-blue");content=pos===-1?'<span class="yard-token '+(p===0?"red-token-bg":"blue-token-bg")+'">'+(tokenIndex+1)+'</span>':"";}
   out+='<div class="'+cls+'">'+content+'</div>';
  }
  return out+'</div>';
@@ -201,7 +216,7 @@ function wireGame(){
  const rt=$("resetTtt");if(rt)rt.onclick=()=>change(s=>{s.ttt={cells:Array(9).fill(""),turn:"X",winner:"",moves:0};});
  document.querySelectorAll("[data-card]").forEach(b=>b.onclick=()=>change(s=>{const g=s.whot,p=me(),i=+b.dataset.card,c=(g.hands[p]||[])[i];if(g.turn!==p||g.winner||g.pendingShapePlayer!==null||room.players.length<2||!c)return;if(c.s===5){g.pendingShapeIndex=i;g.pendingShapePlayer=p;g.message="Choose the shape to call.";return;}playWhotCard(g,p,i);}));
  document.querySelectorAll("[data-shape]").forEach(b=>b.onclick=()=>change(s=>{const g=s.whot,p=me(),shape=+b.dataset.shape;if(g.pendingShapePlayer!==p||g.pendingShapeIndex===null)return;playWhotCard(g,p,g.pendingShapeIndex,shape);}));
- const dr=$("drawCard");if(dr)dr.onclick=()=>change(s=>{const g=s.whot,p=me();if(g.turn!==p||g.winner||g.pendingShapePlayer!==null||room.players.length<2)return;const c=drawWhotCard(g);if(!c){g.message="No cards remain to draw. Restart the game.";return;}g.hands[p].push(c);g.turn=1-p;g.message=room.players[p].name+" drew a card. Turn passes."});
+ const dr=$("drawCard");if(dr)dr.onclick=()=>change(s=>{const g=s.whot,p=me();if(g.turn!==p||g.winner||g.pendingShapePlayer!==null||room.players.length<2)return;if(g.pendingPenalty){const amount=g.pendingPenalty.amount;for(let n=0;n<amount;n++){const c=drawWhotCard(g);if(c)g.hands[p].push(c);}g.pendingPenalty=null;g.turn=1-p;g.message=room.players[p].name+" picked "+amount+" card(s) from the Market. Turn passes.";}else{const c=drawWhotCard(g);if(!c){g.message="No cards remain to draw. Restart the game.";return;}g.hands[p].push(c);g.turn=1-p;g.message=room.players[p].name+" picked a card from the Market. Turn passes."}});
  const rw=$("resetWhot");if(rw)rw.onclick=()=>change(s=>{s.whot=newWhot();});
  const roll=$("rollDice");if(roll)roll.onclick=()=>change(s=>{const g=s.ludo,p=me();if(g.turn!==p||g.dice!==null||g.winner||room.players.length<2)return;g.dice=1+Math.floor(Math.random()*6);const legal=ludoLegalTokens(g,p);if(!legal.length){g.message=room.players[p].name+" rolled "+g.dice+" but has no legal move. Turn passes.";g.turn=1-p;g.dice=null;}else g.message=room.players[p].name+" rolled "+g.dice+". Choose a highlighted token below.";});
  document.querySelectorAll("[data-token-player]").forEach(b=>b.onclick=()=>change(s=>{const g=s.ludo,p=me(),tokenPlayer=+b.dataset.tokenPlayer,token=+b.dataset.token;if(tokenPlayer!==p||g.turn!==p||g.winner||room.players.length<2)return;moveLudo(g,p,token);}));
