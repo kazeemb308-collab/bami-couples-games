@@ -1,33 +1,25 @@
 # Bami & Oluwatosin ❤️ — Online Couples Games
 
-A mobile-first Firebase + Vercel starter for playing together online.
+A mobile-first Firebase + Vercel couples games site with live two-player rooms.
 
-## Games included
-- Private six-character room codes with a two-player limit
-- Live room and game-state sync with Firestore
+## Games
+- **WHOT!**: 65-card deck, six cards each, five shapes plus WHOT cards, shape calling, matching by shape or number, and special-card effects (1 Hold On, 2 Pick Two, 5 WHOT, 8 Suspension, 14 General Market).
+- **Two-player Ludo**: four tokens per player, six to leave the yard, safe squares, captures, home lane, exact finish, and extra turns for a six, capture, or finishing a token.
 - Tic-Tac-Toe
-- WHOT-inspired matching-card game
-- Simplified two-player Ludo race (one token each, not full official Ludo)
 - Couples Quiz
 - Truth or Dare
 
-## 1. Configure Firebase
-1. Visit https://console.firebase.google.com/ and create a project.
-2. Add a Web app in Project settings.
-3. Copy its config into `firebase-config.js`, replacing all `PASTE_...` placeholders.
-4. Create a Firestore database.
-5. Publish the rules from `firestore.rules`.
+WHOT house rules vary. The implemented special-card behavior is shown in the game screen. Ludo is a two-player adaptation; it uses the classic 52-square outer track and a shared home lane for each player.
 
-**Security note:** these starter rules allow anyone who knows a six-character room code to read and write that room. Add Firebase Authentication and strict player-membership checks before promoting this publicly. Do not store sensitive information in rooms.
+## Firebase setup
+1. Set up a Firebase web app and put its settings in \`firebase-config.js\`.
+2. Create a Firestore database.
+3. Publish the rules from \`firestore.rules\`.
 
-## 2. Deploy on Vercel
-1. Visit https://vercel.com/new and import this GitHub repository.
-2. Choose the **Other** framework preset.
-3. Leave the build command and output directory empty.
-4. Deploy, then open your `.vercel.app` link on both phones.
+**Security note:** the prototype rules permit any signed-in user who knows a six-character room code to read/write that room. Add strict player membership and state validation before a public launch. Do not store sensitive information in room documents.
 
-## 3. Play
-One player creates a room and shares the six-character code. The other player enters their name and code, then joins. Both players choose the same game.
+## Deploy
+Import this repository into Vercel using the **Other** preset, with no build command or output directory. Pushes to the connected branch trigger deployments automatically, or deploy manually in Vercel.
 
-## Limitations
-This is a starter prototype. WHOT and Ludo rules are simplified and need testing on two devices. Room codes are not authentication.
+## Play
+Create a room, share its six-character code, and have your partner join from another device. Game state and game selection sync through Firestore.
