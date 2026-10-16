@@ -55,8 +55,9 @@ function dealWhot(g){
  const top=rest.splice(topIndex,1)[0],turn=Math.floor(Math.random()*2);
  Object.assign(g,{deck:rest,discard:[],hands,top,calledShape:null,turn,winner:"",pendingShapeIndex:null,pendingShapePlayer:null,pendingPenalty:null,dealt:true,readyPlayers:[],message:"Cards dealt randomly! "+room.players[turn].name+" starts."});
 }
+function newSnakes(){return {positions:[0,0],turn:0,dice:null,winner:"",message:"Tap the dice to start your race to 100."};}
 function newLudo(){return {tokens:{"0":[-1,-1,-1,-1],"1":[-1,-1,-1,-1],"2":[-1,-1,-1,-1],"3":[-1,-1,-1,-1]},turn:0,dice:null,roll:null,rolls:null,usedDice:[false,false],selectedDie:null,lastRoll:null,sixStreak:0,hasCaptured:{"0":false,"1":false},winner:"",message:"Tap the dice in the centre to roll. Choose one number, then tap a seed to move it."};}
-function initialState(){return {scores:[0,0],gameScores:{whot:[0,0],ludo:[0,0],ttt:[0,0]},ttt:{cells:Array(9).fill(""),turn:"X",winner:"",moves:0},whot:newWhot(),ludo:newLudo(),quiz:{index:0,answers:{},scores:[0,0]},truth:{turn:0,prompt:"Choose Truth or Dare to begin."}};}
+function initialState(){return {scores:[0,0],gameScores:{whot:[0,0],ludo:[0,0],ttt:[0,0],snakes:[0,0]},snakes:newSnakes(),ttt:{cells:Array(9).fill(""),turn:"X",winner:"",moves:0},whot:newWhot(),ludo:newLudo(),quiz:{index:0,answers:{},scores:[0,0]},truth:{turn:0,prompt:"Choose Truth or Dare to begin."}};}
 function me(){return room?room.players.findIndex(p=>p.id===playerId):-1;}
 function myName(p){return esc((room.players[p]||{}).name||("Player "+(p+1)));}
 async function init(){
@@ -282,8 +283,24 @@ function renderLudoBoard(g){
  }
  return out+'</div>';
 }
-function finishedGameInfo(s){
- const key=activeGame==="whot"?"whot":activeGame==="ludo"?"ludo":activeGame==="ttt"?"ttt":null;
+const SNAKE_LADDERS={4:14,9:31,20:38,28:84,40:59,51:67,63:81,71:91,17:7,54:34,62:19,64:60,87:24,93:73,95:75,99:78};
+function renderSnakes(g){
+ if(!g||!Array.isArray(g.positions))g=newSnakes();
+ const names=[myName(0),myName(1)],cols=["#ff579f","#63e6ff"];
+ let h='<div class="snakes-wrap"><div class="snakes-score"><div><span class="snake-dot" style="background:'+cols[0]+'"></span><b>'+names[0]+'</b><strong>'+g.positions[0]+'/100</strong></div><div><span class="snake-dot" style="background:'+cols[1]+'"></span><b>'+names[1]+'</b><strong>'+g.positions[1]+'/100</strong></div></div>';
+ h+='<div class="snakes-dice-panel"><button id="snakesRoll" class="snakes-roll" '+(g.turn!==me()||g.winner||room.players.length<2?'disabled':'')+'><span>'+(g.dice?ludoDieFace(g.dice):'🎲')+'</span><b>'+(g.dice||'ROLL')+'</b></button><div class="snakes-turn">'+(g.winner?esc(g.winner)+' wins! 🎉':room.players.length<2?'Waiting for your partner…':g.turn===me()?'Your turn — roll the dice':'Waiting for '+names[g.turn]+' to roll')+'<small>'+esc(g.message||'')+'</small></div></div>';
+ h+='<div class="snakes-board" aria-label="Snake and Ladder board from 1 to 100">';
+ for(let row=9;row>=0;row--)for(let col=0;col<10;col++){
+  const n=row%2===1?row*10+(10-col):row*10+col+1;
+  let cls='snake-square';if(n===100)cls+=' snake-finish';if(SNAKE_LADDERS[n])cls+=SNAKE_LADDERS[n]>n?' ladder-start':' snake-start';
+  let marks=SNAKE_LADDERS[n]?'<small class="snake-link">'+(SNAKE_LADDERS[n]>n?'🪜 '+SNAKE_LADDERS[n]:'🐍 '+SNAKE_LADDERS[n])+'</small>':'';
+  const tokens=g.positions.map((p,i)=>p===n?'<span class="snake-piece" style="background:'+cols[i]+'">'+(i===0?'B':'O')+'</span>':'').join('');
+  h+='<div class="'+cls+'"><b>'+n+'</b>'+marks+(tokens?'<div class="snake-pieces">'+tokens+'</div>':'')+'</div>';
+ }
+ return h+'</div><div class="snakes-bottom"><span>🪜 Ladders take you up</span><span>🐍 Snakes slide you down</span></div></div>';
+}
+\nfunction finishedGameInfo(s){
+ const key=activeGame==="whot"?"whot":activeGame==="ludo"?"ludo":activeGame==="snakes"?"snakes":activeGame==="ttt"?"ttt":null;
  if(!key)return null;
  const g=s[key];if(!g)return null;
  if(g.winner)return {key,winner:g.winner,draw:false};
@@ -293,7 +310,7 @@ function finishedGameInfo(s){
 function resetFinishedGame(s,key){
  if(key==="whot")s.whot=newWhot();
  else if(key==="ludo")s.ludo=newLudo();
- else if(key==="ttt")s.ttt={cells:Array(9).fill(""),turn:"X",winner:"",moves:0};
+ else if(key==="ttt")s.ttt={cells:Array(9).fill(""),turn:"X",winner:"",moves:0};\n else if(key==="snakes")s.snakes=newSnakes();
  s.rematchVotes=[];
 }
 function renderGame(){
@@ -304,7 +321,7 @@ function renderGame(){
   const g=s.ttt;h+='<div class="center"><p>'+(g.winner?"Winner: "+esc(g.winner):g.moves===9?"It is a draw!":"Turn: "+g.turn)+'</p><div class="board">'+g.cells.map((v,i)=>'<button class="cell" data-cell="'+i+'" '+(v||g.winner||room.players.length<2?'disabled':'')+'>'+esc(v)+'</button>').join("")+'</div><button id="resetTtt" class="secondary">New round</button></div>';
  }
  if(activeGame==="whot")h+=renderWhot(s.whot);
- if(activeGame==="ludo")h+=renderLudo(s.ludo);
+ if(activeGame==="ludo")h+=renderLudo(s.ludo);\n if(activeGame==="snakes")h+=renderSnakes(s.snakes);
  if(activeGame==="quiz"){
   const g=s.quiz,q=quiz[g.index%quiz.length];h+='<div class="quizcard"><div class="muted">Question '+(g.index%quiz.length+1)+' of '+quiz.length+'</div><h3>'+esc(q[0])+'</h3><p class="muted">Choose what you think your partner would answer, then talk about it.</p><div class="answers">'+q[1].map((a,i)=>'<button data-answer="'+i+'" '+(g.answers[me()]===i?'style="outline:2px solid #ff579f"':'')+' '+(room.players.length<2?'disabled':'')+'>'+esc(a)+'</button>').join("")+'</div><p class="muted">'+myName(0)+': '+g.scores[0]+' points · '+myName(1)+': '+g.scores[1]+' points</p><button id="nextQuiz" class="pink" '+((g.answers[0]===undefined||g.answers[1]===undefined||room.players.length<2)?'disabled':'')+'>Next question →</button> <button id="resetQuiz" class="secondary">Reset</button></div>';
  }
@@ -337,7 +354,7 @@ function wireGame(){
  document.querySelectorAll("[data-shape]").forEach(b=>b.onclick=()=>change(s=>{const g=s.whot,p=me(),shape=+b.dataset.shape;if(g.pendingShapePlayer!==p||g.pendingShapeIndex===null)return;playWhotCard(g,p,g.pendingShapeIndex,shape);}));
  const drawFromMarket=()=>change(s=>{const g=s.whot,p=me();if(g.turn!==p||g.winner||g.pendingShapePlayer!==null||room.players.length<2)return;if(g.pendingPenalty){const amount=g.pendingPenalty.amount;for(let n=0;n<amount;n++){const c=drawWhotCard(g);if(c)g.hands[p].push(c);}g.pendingPenalty=null;g.turn=1-p;g.message=room.players[p].name+" picked "+amount+" card(s) from the Market. Turn passes.";}else{const c=drawWhotCard(g);if(!c){g.message="No cards remain to draw. Restart the game.";return;}g.hands[p].push(c);g.turn=1-p;g.message=room.players[p].name+" picked a card from the Market. Turn passes.";}});const dr=$("drawCard");if(dr)dr.onclick=drawFromMarket;const pile=$("drawPile");if(pile)pile.onclick=drawFromMarket;
  const rw=$("resetWhot");if(rw)rw.onclick=()=>change(s=>{s.whot=newWhot();});
-  const roll=$("rollDice");if(roll)roll.onclick=async()=>{if(roll.disabled||roll.dataset.rolling==="1")return;roll.dataset.rolling="1";roll.classList.add("is-rolling");try{await change(s=>{const g=s.ludo,p=me();ensureLudoState(g);if(g.turn!==p||Array.isArray(g.rolls)||g.winner||room.players.length<2)return;const a=1+Math.floor(Math.random()*6),b=1+Math.floor(Math.random()*6),rolls=[a,b];g.roll=rolls;g.rolls=rolls;g.usedDice=[false,false];g.selectedDie=null;g.dice=null;g.lastRoll=rolls;g.sixStreak=0;let any=false;for(let i=0;i<2;i++){g.dice=rolls[i];if(ludoLegalTokens(g,p).length)any=true;else g.usedDice[i]=true;}g.dice=null;if(!any){const bonus=a===6&&b===6;g.message=room.players[p].name+" rolled "+a+" and "+b+" but has no legal move. "+(bonus?"Double six: roll again!":"Turn passes.");g.roll=null;g.rolls=null;g.usedDice=[false,false];g.sixStreak=0;if(!bonus)g.turn=1-p;}else g.message="";});}finally{const current=$("rollDice");if(current){current.dataset.rolling="";current.classList.remove("is-rolling");}}};
+ const snakeRoll=$("snakesRoll");if(snakeRoll)snakeRoll.onclick=()=>change(s=>{const g=s.snakes;if(!g||g.turn!==me()||g.winner||room.players.length<2)return;const roll=1+Math.floor(Math.random()*6);g.dice=roll;let next=g.positions[me()];if(next+roll>100){g.message="Need an exact roll to reach 100.";g.turn=1-me();return;}next+=roll;if(SNAKE_LADDERS[next]){const target=SNAKE_LADDERS[next];g.message=target>next?"Ladder! Climb from "+next+" to "+target+"!":"Snake! Slide from "+next+" to "+target+"!";next=target;}else g.message=room.players[me()].name+" moved to square "+next+".";g.positions[me()]=next;if(next===100){g.winner=room.players[me()].name;g.message=g.winner+" wins Snake and Ladder!";return;}if(roll===6)g.message+=" Six! Roll again.";else g.turn=1-me();});\n  const roll=$("rollDice");if(roll)roll.onclick=async()=>{if(roll.disabled||roll.dataset.rolling==="1")return;roll.dataset.rolling="1";roll.classList.add("is-rolling");try{await change(s=>{const g=s.ludo,p=me();ensureLudoState(g);if(g.turn!==p||Array.isArray(g.rolls)||g.winner||room.players.length<2)return;const a=1+Math.floor(Math.random()*6),b=1+Math.floor(Math.random()*6),rolls=[a,b];g.roll=rolls;g.rolls=rolls;g.usedDice=[false,false];g.selectedDie=null;g.dice=null;g.lastRoll=rolls;g.sixStreak=0;let any=false;for(let i=0;i<2;i++){g.dice=rolls[i];if(ludoLegalTokens(g,p).length)any=true;else g.usedDice[i]=true;}g.dice=null;if(!any){const bonus=a===6&&b===6;g.message=room.players[p].name+" rolled "+a+" and "+b+" but has no legal move. "+(bonus?"Double six: roll again!":"Turn passes.");g.roll=null;g.rolls=null;g.usedDice=[false,false];g.sixStreak=0;if(!bonus)g.turn=1-p;}else g.message="";});}finally{const current=$("rollDice");if(current){current.dataset.rolling="";current.classList.remove("is-rolling");}}};
 document.querySelectorAll("[data-ludo-die]").forEach(b=>b.onclick=()=>change(s=>{const g=s.ludo,p=me(),i=+b.dataset.ludoDie;ensureLudoState(g);if(g.turn!==p||!Array.isArray(g.rolls)||g.usedDice[i]||g.winner||room.players.length<2)return;g.dice=g.rolls[i];g.selectedDie=i;if(!ludoLegalTokens(g,p).length){g.usedDice[i]=true;g.dice=null;g.selectedDie=null;g.message="No seed can use "+g.rolls[i]+". Choose the other number.";if(g.usedDice.every(Boolean)){const bonus=g.rolls[0]===6&&g.rolls[1]===6;g.roll=null;g.rolls=null;g.usedDice=[false,false];if(!bonus)g.turn=1-p;g.message+=bonus?" Double six: roll again!":" Turn passes."}return;}g.message="Selected "+g.rolls[i]+". Now tap one of your movable seeds."; }));
   document.querySelectorAll("[data-ludo-stack]").forEach(b=>b.onclick=()=>{const choices=JSON.parse(b.dataset.ludoStack),area=$("gameArea");if(!area)return;const overlay=document.createElement("div");overlay.className="ludo-seed-picker-overlay";overlay.innerHTML='<div class="ludo-seed-picker" role="dialog" aria-modal="true"><b>Which seed do you want to move?</b><div class="ludo-seed-picker-options">'+choices.map(x=>'<button type="button" class="ludo-seed-option '+LUDO_COLOURS[x.colour].css+'-token-bg" data-pick-colour="'+x.colour+'" data-pick-token="'+x.token+'">'+LUDO_COLOURS[x.colour].name+' seed '+(x.token+1)+'</button>').join("")+'</div><button type="button" class="secondary ludo-seed-cancel">Cancel</button></div>';area.appendChild(overlay);overlay.querySelector(".ludo-seed-cancel").onclick=()=>overlay.remove();overlay.querySelectorAll("[data-pick-colour]").forEach(opt=>opt.onclick=()=>{const colour=+opt.dataset.pickColour,token=+opt.dataset.pickToken;overlay.remove();change(s=>{const g=s.ludo,p=me();if(g.turn!==p||g.winner||room.players.length<2||g.selectedDie===null||g.dice===null)return;moveLudo(g,p,colour,token);});});});
  document.querySelectorAll("[data-token-owner]").forEach(b=>b.onclick=()=>change(s=>{const g=s.ludo,p=me(),owner=+b.dataset.tokenOwner,colour=+b.dataset.tokenColour,token=+b.dataset.token;if(owner!==p||g.turn!==p||g.winner||room.players.length<2)return;moveLudo(g,p,colour,token);}));
