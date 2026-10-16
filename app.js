@@ -95,7 +95,11 @@ async function change(fn){
  catch(e){say(e.message);}
 }
 function cardLabel(c){return c.s===5?"20":String(c.n);}
-function cardShape(c){return c.s===5?"WHOT!":shapeGlyphs[c.s];}
+function cardShape(c){return c.s===5?"★":shapeGlyphs[c.s];}
+function whotFace(c,caption){
+ const n=cardLabel(c),special=c.s===5;
+ return '<span class="card-corner top">'+esc(n)+'</span><span class="shape">'+esc(cardShape(c))+'</span><span class="card-caption">'+esc(special?"WHOT!":caption||shapeNames[c.s])+'</span><span class="card-corner bottom">'+esc(n)+'</span>';
+}
 function drawWhotCard(g){
  if(!g.deck.length&&g.discard.length){g.deck=shuffle(g.discard);g.discard=[];}
  return g.deck.length?g.deck.pop():null;
@@ -151,13 +155,13 @@ function renderWhot(g){
  let h='<div class="naija-whot-table">';
  h+='<div class="whot-opponent"><div class="whot-player-badge"><span class="whot-avatar">♥</span><span><b>'+myName(opponent)+'</b><small>OPPONENT · '+opponentHand.length+' CARDS</small></span></div><div class="opponent-hand">'+opponentHand.map(()=>'<span class="card-back"><i>W</i><small>NAIJA WHOT</small></span>').join('')+'</div></div>';
  h+='<div class="whot-arena"><div class="whot-pile"><small>MARKET</small><button id="drawPile" class="playingcard card-back market-card" '+(g.turn!==p||g.winner||room.players.length<2||g.pendingShapePlayer!==null?'disabled':'')+'><i>W</i><small>DRAW</small></button><b>'+g.deck.length+' left</b></div>';
- h+='<div class="whot-pile discard-pile"><small>PLAYING CARD</small><div class="playingcard top-playing-card '+(top.s===5?"whot-card":"suit-"+top.s)+'"><span>'+esc(cardLabel(top))+'</span><span class="shape">'+esc(cardShape(top))+'</span><span>'+(top.s===5?esc(g.calledShape===null?"CALL A SHAPE":shapeNames[g.calledShape]):esc(shapeNames[top.s]))+'</span></div><b>DISCARD PILE</b></div></div>';
+ h+='<div class="whot-pile discard-pile"><small>PLAYING CARD</small><div class="playingcard top-playing-card '+(top.s===5?"whot-card":"suit-"+top.s)+'">'+whotFace(top,top.s===5?(g.calledShape===null?"CALL A SHAPE":shapeNames[g.calledShape]):shapeNames[top.s])+'</div><b>DISCARD PILE</b></div></div>';
  h+='<div class="whot-turn-strip '+(g.turn===p?'your-turn':'')+'"><span>'+(g.winner?'🏆 GAME OVER':g.turn===p?'✨ YOUR TURN':'⏳ OPPONENT’S TURN')+'</span><span>'+hand.length+' cards in your hand</span></div>';
  h+='<p class="whot-message">'+esc(g.message)+'</p>';
  if(g.pendingShapePlayer===p&&g.pendingShapeIndex!==null){h+='<div class="shape-picker"><b>WHOT 20 — choose your shape</b><div class="shape-options">'+shapeNames.map((n,i)=>'<button class="shape-choice" data-shape="'+i+'"><span>'+shapeGlyphs[i]+'</span><small>'+n+'</small></button>').join("")+'</div></div>';}
  else if(g.pendingShapePlayer!==null){h+='<p class="notice">Your partner is choosing a shape…</p>';}
  h+='<div class="whot-hand-title"><b>YOUR CARDS</b><small>'+(playable?'Play a matching number or shape':'No matching card? Draw from the market')+'</small></div>';
- h+='<div class="cards whot-hand">'+hand.map((c,i)=>'<button class="playingcard '+(c.s===5?"whot-card":"suit-"+c.s)+'" data-card="'+i+'" '+(g.turn!==p||g.winner||room.players.length<2||g.pendingShapePlayer!==null?'disabled':'')+'><span>'+esc(cardLabel(c))+'</span><span class="shape">'+esc(cardShape(c))+'</span><span>'+(c.s===5?"WHOT":esc(shapeNames[c.s]))+'</span></button>').join("")+'</div>';
+ h+='<div class="cards whot-hand">'+hand.map((c,i)=>'<button class="playingcard '+(c.s===5?"whot-card":"suit-"+c.s)+'" data-card="'+i+'" '+(g.turn!==p||g.winner||room.players.length<2||g.pendingShapePlayer!==null?'disabled':'')+'>'+whotFace(c,c.s===5?"WHOT":shapeNames[c.s])+'</button>').join("")+'</div>';
  h+='<div class="actions center-actions"><button id="drawCard" class="gold" '+(g.turn!==p||g.winner||room.players.length<2||g.pendingShapePlayer!==null?'disabled':'')+'>'+(g.pendingPenalty?"Pick "+g.pendingPenalty.amount+" cards":"Draw from Market")+'</button><button id="resetWhot" class="secondary">Restart WHOT</button></div>';
  h+='<p class="notice">Naija WHOT rules: 1 Hold On · 2 Pick Two · 5 Pick Three · 8 Suspension · 14 General Market · WHOT 20 lets you call a shape.</p></div>';
  return h;
@@ -221,11 +225,11 @@ function renderGame(){
 }
 function wireGame(){
  document.querySelectorAll("[data-cell]").forEach(b=>b.onclick=()=>change(s=>{const g=s.ttt,i=+b.dataset.cell,mark=me()===0?"X":"O",lines=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];if(g.cells[i]||g.winner||g.turn!==mark||room.players.length<2)return;g.cells[i]=mark;g.moves++;if(lines.some(l=>l.every(n=>g.cells[n]===mark)))g.winner=room.players[me()].name;else g.turn=mark==="X"?"O":"X";}));
- const back=$("backToGames");if(back)back.onclick=()=>{document.querySelector(".games").classList.remove("hidden");document.querySelector(".games").scrollIntoView({behavior:"smooth",block:"start"});};
+ const back=$("backToGames");if(back)back.onclick=()=>{const picker=document.querySelector(".games"),area=$("gameArea");picker.classList.remove("hidden");area.classList.add("hidden");picker.scrollIntoView({behavior:"smooth",block:"start"});};
  const rt=$("resetTtt");if(rt)rt.onclick=()=>change(s=>{s.ttt={cells:Array(9).fill(""),turn:"X",winner:"",moves:0};});
  document.querySelectorAll("[data-card]").forEach(b=>b.onclick=()=>change(s=>{const g=s.whot,p=me(),i=+b.dataset.card,c=(g.hands[p]||[])[i];if(g.turn!==p||g.winner||g.pendingShapePlayer!==null||room.players.length<2||!c)return;if(c.s===5){g.pendingShapeIndex=i;g.pendingShapePlayer=p;g.message="Choose the shape to call.";return;}playWhotCard(g,p,i);}));
  document.querySelectorAll("[data-shape]").forEach(b=>b.onclick=()=>change(s=>{const g=s.whot,p=me(),shape=+b.dataset.shape;if(g.pendingShapePlayer!==p||g.pendingShapeIndex===null)return;playWhotCard(g,p,g.pendingShapeIndex,shape);}));
- const dr=$("drawCard");if(dr)dr.onclick=()=>change(s=>{const g=s.whot,p=me();if(g.turn!==p||g.winner||g.pendingShapePlayer!==null||room.players.length<2)return;if(g.pendingPenalty){const amount=g.pendingPenalty.amount;for(let n=0;n<amount;n++){const c=drawWhotCard(g);if(c)g.hands[p].push(c);}g.pendingPenalty=null;g.turn=1-p;g.message=room.players[p].name+" picked "+amount+" card(s) from the Market. Turn passes.";}else{const c=drawWhotCard(g);if(!c){g.message="No cards remain to draw. Restart the game.";return;}g.hands[p].push(c);g.turn=1-p;g.message=room.players[p].name+" picked a card from the Market. Turn passes."}});
+ const drawFromMarket=()=>change(s=>{const g=s.whot,p=me();if(g.turn!==p||g.winner||g.pendingShapePlayer!==null||room.players.length<2)return;if(g.pendingPenalty){const amount=g.pendingPenalty.amount;for(let n=0;n<amount;n++){const c=drawWhotCard(g);if(c)g.hands[p].push(c);}g.pendingPenalty=null;g.turn=1-p;g.message=room.players[p].name+" picked "+amount+" card(s) from the Market. Turn passes.";}else{const c=drawWhotCard(g);if(!c){g.message="No cards remain to draw. Restart the game.";return;}g.hands[p].push(c);g.turn=1-p;g.message=room.players[p].name+" picked a card from the Market. Turn passes.";}});const dr=$("drawCard");if(dr)dr.onclick=drawFromMarket;const pile=$("drawPile");if(pile)pile.onclick=drawFromMarket;
  const rw=$("resetWhot");if(rw)rw.onclick=()=>change(s=>{s.whot=newWhot();});
  const roll=$("rollDice");if(roll)roll.onclick=()=>change(s=>{const g=s.ludo,p=me();if(g.turn!==p||g.dice!==null||g.winner||room.players.length<2)return;g.dice=1+Math.floor(Math.random()*6);const legal=ludoLegalTokens(g,p);if(!legal.length){g.message=room.players[p].name+" rolled "+g.dice+" but has no legal move. Turn passes.";g.turn=1-p;g.dice=null;}else g.message=room.players[p].name+" rolled "+g.dice+". Choose a highlighted token below.";});
  document.querySelectorAll("[data-token-player]").forEach(b=>b.onclick=()=>change(s=>{const g=s.ludo,p=me(),tokenPlayer=+b.dataset.tokenPlayer,token=+b.dataset.token;if(tokenPlayer!==p||g.turn!==p||g.winner||room.players.length<2)return;moveLudo(g,p,token);}));
@@ -238,7 +242,7 @@ function wireGame(){
  const nt=$("nextTruth");if(nt)nt.onclick=()=>change(s=>{if(s.truth.turn!==me())return;s.truth.turn=1-s.truth.turn;s.truth.prompt="Choose Truth or Dare to begin.";});
 }
 $("createRoom").onclick=createRoom;$("joinRoom").onclick=joinRoom;
-document.querySelectorAll(".game").forEach(b=>b.onclick=async()=>{if(!roomId||!db)return;try{await runTransaction(db,async tx=>{const ref=doc(db,"coupleRooms",roomId),snap=await tx.get(ref);if(!snap.exists())throw Error("Room not found.");tx.update(ref,{activeGame:b.dataset.game});});document.querySelector(".games").classList.add("hidden");document.querySelector("#gameArea").scrollIntoView({behavior:"smooth",block:"start"});}catch(e){say("Could not switch game: "+e.message);}});
+document.querySelectorAll(".game").forEach(b=>b.onclick=async()=>{if(!roomId||!db)return say("Create or join a room before choosing a game.");try{await runTransaction(db,async tx=>{const ref=doc(db,"coupleRooms",roomId),snap=await tx.get(ref);if(!snap.exists())throw Error("Room not found.");tx.update(ref,{activeGame:b.dataset.game});});document.querySelector(".games").classList.add("hidden");$("gameArea").classList.remove("hidden");$("gameArea").scrollIntoView({behavior:"smooth",block:"start"});}catch(e){say("Could not switch game: "+e.message);}});
 $("copyInvite").onclick=async()=>{try{await navigator.clipboard.writeText(roomId);say("Room code copied: "+roomId);}catch(e){say("Share this room code: "+roomId);}};
 $("leaveRoom").onclick=()=>{if(unsubscribe)unsubscribe();unsubscribe=null;roomId=null;room=null;playerId=null;$("roomSection").classList.add("hidden");$("connectionStatus").innerHTML="Firebase ready<br>Not in a room yet";window.scrollTo({top:0,behavior:"smooth"});};
 init();
