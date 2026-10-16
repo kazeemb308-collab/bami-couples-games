@@ -121,6 +121,22 @@
 
 .naija-whot-table .playingcard .card-caption{bottom:27px!important}
 .naija-whot-table .top-playing-card .card-caption{bottom:29px!important}
+
+/* WHOT full-screen table and clearer playable-card feedback */
+body:has(#gameArea .naija-whot-table){overflow:hidden}
+#gameArea:has(.naija-whot-table){position:fixed;inset:0;z-index:1000;width:100%;height:100vh;height:100dvh;max-width:none;margin:0;padding:0;border:0;border-radius:0;overflow-x:hidden;overflow-y:auto;background:#063829;box-shadow:none;overscroll-behavior:contain}
+#gameArea:has(.naija-whot-table) .naija-whot-table{min-height:calc(100vh - 58px);min-height:calc(100dvh - 58px);border:0;border-radius:0;padding:clamp(10px,2.5vw,24px) clamp(10px,3vw,28px) max(18px,env(safe-area-inset-bottom));box-shadow:none;overflow:visible}
+.whot-screen-header{position:sticky;top:0;z-index:5;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;padding:calc(8px + env(safe-area-inset-top)) 12px 9px;background:linear-gradient(180deg,#043a2b,#07533d);border-bottom:1px solid #ffffff24}
+.whot-back{justify-self:start;padding:9px 12px;background:#ffffff16;border:1px solid #ffffff35;color:#fff;font-size:12px}
+.whot-brandline{display:flex;align-items:center;gap:7px;white-space:nowrap}.whot-brandline>span:first-child{font-size:24px}.whot-brandline b,.whot-brandline small{display:block}.whot-brandline b{font-size:12px;letter-spacing:1.3px}.whot-brandline small{font-size:8px;letter-spacing:1px;color:#b7e9d1;margin-top:2px}
+.whot-online{justify-self:end;color:#c8efd9;font-size:9px;font-weight:900;letter-spacing:.5px;text-align:right}
+.naija-whot-table .whot-hand .playingcard.can-play{transform:translateY(-3px);border-color:#ffe082;box-shadow:0 7px 0 #9e7847,0 0 0 2px #ffe08255,0 10px 18px #0019}
+.naija-whot-table .whot-hand .playingcard.cannot-play{opacity:.48;filter:saturate(.55);box-shadow:0 3px 0 #806541;transform:scale(.96)}
+.naija-whot-table .whot-hand .playingcard.can-play:active{transform:translateY(-7px) scale(1.02)}
+.naija-whot-table .whot-hand .playingcard:disabled{cursor:not-allowed}
+@media(max-width:480px){.whot-screen-header{grid-template-columns:auto 1fr auto;padding-left:9px;padding-right:9px}.whot-brandline{justify-self:center}.whot-brandline b{font-size:10px}.whot-brandline small{font-size:7px}.whot-back{padding:8px;font-size:11px}.whot-online{font-size:8px}.naija-whot-table .whot-hand{gap:5px}.naija-whot-table .whot-hand .playingcard{flex:1 1 17%;max-width:74px;min-width:0;height:clamp(94px,28vw,120px)}}
+@media(min-width:700px){#gameArea:has(.naija-whot-table) .naija-whot-table{max-width:1050px;margin:0 auto;min-height:calc(100dvh - 58px);padding:20px 34px}.naija-whot-table .whot-hand{gap:12px}.naija-whot-table .whot-hand .playingcard{max-width:90px}}
+
 </style>
 </head><body>
 <header><div class="brand">Bami <span>&</span> Oluwatosin <span>♥</span></div><div class="status" id="connectionStatus">Connecting…<br>Private couple room</div></header>
@@ -149,4 +165,4 @@ window.addEventListener("unhandledrejection", function (event) {
   message.textContent = "Startup failed: " + reason;
 });
 </script>
-<script type="module" src="./app.js?v=20261016gamepicker1"></script></body></html>
+<script type="module" src="./app.js?v=20261016whotfullscreen2"></script></body></html>
