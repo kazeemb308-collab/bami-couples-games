@@ -6,6 +6,44 @@
 <style>
 :root{--bg:#090b18;--panel:#151b30;--line:#303958;--text:#f5f6ff;--muted:#a7b0ca;--pink:#ff579f;--cyan:#63e6ff;--gold:#ffd166}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#20264b,#090b18 65%);color:var(--text);font-family:system-ui,-apple-system,sans-serif;min-height:100vh}button,input{font:inherit}button{cursor:pointer;border:0;border-radius:12px;padding:12px 15px;font-weight:800;background:var(--cyan);color:#08101a}button:disabled{opacity:.4}.pink{background:var(--pink)}.gold{background:var(--gold)}.secondary{background:#28314d;color:white;border:1px solid #424d70}header,main{max-width:1000px;margin:auto;padding:18px}header{display:flex;justify-content:space-between;gap:12px;align-items:center}.brand{font-size:clamp(20px,4vw,30px);font-weight:950}.brand span{color:var(--pink)}.status,.muted,.notice{color:var(--muted);font-size:13px}.status{text-align:right}.hero{padding:20px 0}.eyebrow{color:var(--cyan);font-size:12px;font-weight:900;letter-spacing:2px}.hero h1{font-size:clamp(32px,7vw,56px);line-height:1.02;margin:8px 0}.hero p{color:var(--muted);line-height:1.6}.panel{background:linear-gradient(145deg,#1a2139,#101426);border:1px solid var(--line);border-radius:20px;padding:18px;margin:14px 0}.setup{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0}.field label{display:block;color:var(--muted);font-size:12px;font-weight:800;margin-bottom:7px}.field input{width:100%;padding:13px;background:#090e20;border:1px solid var(--line);border-radius:11px;color:white}.actions{display:flex;gap:9px;flex-wrap:wrap}.games{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin:15px 0}.game{min-height:120px;text-align:left;background:#151b30;color:white;border:1px solid var(--line)}.game .emoji{display:block;font-size:27px;margin-bottom:10px}.game small{display:block;color:var(--muted);margin-top:6px}.game.active{border-color:var(--pink)}.hidden{display:none!important}.roomcode{font-size:26px;font-weight:950;letter-spacing:5px;color:var(--gold)}.roombar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}.board{display:grid;grid-template-columns:repeat(3,1fr);max-width:330px;margin:18px auto;gap:8px}.cell{aspect-ratio:1;font-size:45px;background:#090e20;color:var(--cyan);border:1px solid var(--line)}.quizcard{padding:16px;background:#0b1022;border:1px solid var(--line);border-radius:15px;margin:14px 0}.answers{display:grid;grid-template-columns:1fr 1fr;gap:8px}.answers button{background:#28314d;color:white}.cards{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}.playingcard{background:#fff;color:#12172a;min-width:65px;min-height:90px;border:3px solid white;border-radius:10px;display:flex;flex-direction:column;justify-content:space-between;align-items:center;padding:7px}.playingcard.red{color:#d72660}.shape{font-size:24px}.center{text-align:center}.toast{background:#18233b;border:1px solid #3a4a6e;border-radius:12px;padding:12px;margin:12px 0}.footer{text-align:center;color:#737fa2;font-size:12px;padding:24px 0}@media(max-width:700px){header,main{padding:13px}.setup{grid-template-columns:1fr}.games{grid-template-columns:repeat(2,1fr)}.game:last-child{grid-column:span 2}.answers{grid-template-columns:1fr 1fr}}
+
+/* Real WHOT and two-player Ludo board */
+.top-playing-card{margin:10px auto;width:100px;min-height:130px;box-shadow:0 8px 20px #0005}
+.whot-card{background:linear-gradient(145deg,#ff579f,#ff8bc0);color:#fff;border-color:#ffd6e7}
+.whot-hand .playingcard{min-width:58px;min-height:92px;flex:0 1 68px}
+.shape-picker{margin:16px auto;padding:14px;background:#151b30;border:1px solid var(--line);border-radius:14px;max-width:500px}
+.shape-options{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:10px}
+.shape-choice{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:64px;background:#28314d;color:#fff}
+.shape-choice small{font-size:10px}
+.center-actions{justify-content:center;margin-top:15px}
+.ludo-wrap{max-width:600px;margin:auto}
+.ludo-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:12px;background:#0b1022;border:1px solid var(--line);border-radius:14px}
+.ludo-dice{font-size:42px;font-weight:950;color:var(--gold);line-height:1.1}
+.ludo-message{flex:1;min-width:140px;text-align:left}
+.ludo-board{display:grid;grid-template-columns:repeat(15,minmax(0,1fr));width:min(100%,430px);aspect-ratio:1;margin:16px auto;background:#dce2ef;border:3px solid #f8faff;border-radius:8px;overflow:hidden;gap:1px}
+.ludo-cell{min-width:0;min-height:0;display:flex;align-items:center;justify-content:center;background:#f7f8fc;color:#19213a;font-size:clamp(5px,1.5vw,12px);font-weight:900;overflow:hidden}
+.track-cell{background:#fff;border:1px solid #d5dced}
+.safe-cell{background:#fff4cb;color:#b77b00}
+.red-start,.red-lane{background:#ffdce4}
+.blue-start,.blue-lane{background:#dceaff}
+.base-red{background:#f9c5d1}
+.base-blue{background:#c4dcff}
+.center-red{background:#ff8da8;clip-path:polygon(0 0,100% 50%,0 100%)}
+.center-blue{background:#8cbaff;clip-path:polygon(100% 0,100% 100%,0 50%)}
+.center-home{background:#ffd166;color:#a65378;font-size:clamp(7px,2vw,18px)}
+.board-token{width:78%;height:78%;border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-size:clamp(5px,1.4vw,10px);border:1px solid #fff;box-shadow:0 1px 3px #0007;line-height:1}
+.red-token-bg{background:#d72660}.blue-token-bg{background:#2878e8}
+.ludo-cell .board-token+.board-token{margin-left:-25%}
+.ludo-player{margin:12px 0;padding:12px;border:1px solid var(--line);border-radius:14px;background:#101629}
+.ludo-player h3{margin:0 0 10px;font-size:15px}
+.red-player{border-color:#a83c60}.blue-player{border-color:#3569a8}
+.token-tray{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}
+.token-pick{padding:9px 4px;min-width:0;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:13px}
+.token-pick small{font-size:10px;font-weight:600;opacity:.8}
+.red-token{background:#d72660;color:white}.blue-token{background:#2878e8;color:white}
+.token-pick:disabled{filter:grayscale(.5)}
+@media(max-width:440px){.ludo-head{gap:8px}.ludo-head button{padding:10px}.token-tray{gap:5px}.token-pick{font-size:12px;padding:8px 2px}.ludo-board{border-width:2px}}
+
 </style>
 </head><body>
 <header><div class="brand">Bami <span>&</span> Oluwatosin <span>♥</span></div><div class="status" id="connectionStatus">Connecting…<br>Private couple room</div></header>
@@ -34,4 +72,4 @@ window.addEventListener("unhandledrejection", function (event) {
   message.textContent = "Startup failed: " + reason;
 });
 </script>
-<script type="module" src="./app.js?v=20261016adv1"></script></body></html>
+<script type="module" src="./app.js?v=20261016realgames1"></script></body></html>
