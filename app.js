@@ -147,9 +147,11 @@ function playWhotCard(g,p,i,chosenShape){
  return true;
 }
 function ludoCanMove(pos,dice){if(dice===null||dice===undefined)return false;if(pos===-1)return dice===6;if(pos===57)return false;return pos+dice<=57;}
+function ensureLudoState(g){if(!g.tokens)g.tokens={};for(let col=0;col<4;col++)if(!Array.isArray(g.tokens[String(col)]))g.tokens[String(col)]=[-1,-1,-1,-1];if(!Array.isArray(g.roll))g.roll=null;}
 function ludoOwner(colour){return colour<2?0:1;}
 function ludoGlobal(colour,pos){return (LUDO_START[colour]+pos)%52;}
 function ludoCanLand(g,colour,pos,dice){
+ ensureLudoState(g);
  if(!ludoCanMove(pos,dice))return false;
  const next=pos===-1?0:pos+dice;
  if(next<0||next>51)return true;
@@ -158,8 +160,9 @@ function ludoCanLand(g,colour,pos,dice){
  for(let col=0;col<4;col++)if(ludoOwner(col)!==owner)(g.tokens[String(col)]||[]).forEach(v=>{if(v>=0&&v<=51&&ludoGlobal(col,v)===landing)opponents.push(v);});
  return LUDO_SAFE.has(landing)||opponents.length<2;
 }
-function ludoLegalTokens(g,p){const out=[];for(let colour=0;colour<4;colour++)if(ludoOwner(colour)===p)(g.tokens[String(colour)]||[]).forEach((pos,i)=>{if(ludoCanLand(g,colour,pos,g.dice))out.push({colour,token:i});});return out;}
+function ludoLegalTokens(g,p){ensureLudoState(g);const out=[];for(let colour=0;colour<4;colour++)if(ludoOwner(colour)===p)(g.tokens[String(colour)]||[]).forEach((pos,i)=>{if(ludoCanLand(g,colour,pos,g.dice))out.push({colour,token:i});});return out;}
 function moveLudo(g,p,colour,tokenIndex){
+ ensureLudoState(g);
  const own=g.tokens[String(colour)],pos=own[tokenIndex],dice=g.dice;if(ludoOwner(colour)!==p||g.turn!==p||!ludoCanLand(g,colour,pos,dice))return;
  const before=pos;own[tokenIndex]=pos===-1?0:pos+dice;let captured=false;
  if(own[tokenIndex]>=0&&own[tokenIndex]<=51){
@@ -198,8 +201,9 @@ function renderWhot(g){
 }
 function ludoDieFace(n){return n===null||n===undefined?"🎲":(["","⚀","⚁","⚂","⚃","⚄","⚅"][n]||"🎲");}
 function renderLudo(g){
+ ensureLudoState(g);
  const p=me(),dice=g.dice,ownedColours=p===0?[0,1]:[2,3];
- const dieButton='<button id="rollDice" class="dice-card dice-roll-button" aria-label="Tap the two dice to roll" '+(g.turn!==p||dice!==null||g.winner||room.players.length<2?'disabled':'')+'><div class="muted">TAP DICE TO ROLL</div><div class="ludo-dice-pair"><span class="ludo-die">'+ludoDieFace(g.roll?.[0]??null)+'</span><span class="ludo-die">'+ludoDieFace(g.roll?.[1]??null)+'</span></div><small class="dice-tap-label">'+(dice===null?(g.roll?'LAST TOTAL: '+g.roll.reduce((a,b)=>a+b,0):'ROLL BOTH DICE'):'TOTAL: '+dice)+'</small></button>';
+
  let h='<div class="ludo-wrap"><div class="ludo-head ludo-head-center">'+dieButton+'<div class="ludo-message"><b>'+esc(g.message)+'</b><p class="muted">Turn: '+myName(g.turn)+' · controls '+(p===0?'RED + GREEN':'YELLOW + BLUE')+(g.sixStreak?' · Six streak: '+g.sixStreak+'/3':'')+'</p></div><div class="ludo-match-badge">'+(room.players.length<2?'WAITING FOR PLAYER':'🔴 RED + 🟢 GREEN VS 🟡 YELLOW + 🔵 BLUE')+'</div></div>';
  h+='<div class="ludo-board-frame"><div class="ludo-board-title"><b>NAIJA LUDO</b><span>2 DICE · 16 SEEDS</span></div>'+renderLudoBoard(g)+'</div>';
  for(const colour of ownedColours){const col=LUDO_COLOURS[colour],tokens=g.tokens[String(colour)];h+='<div class="ludo-player ludo-player-'+col.css+'"><h3><span class="player-colour-dot '+col.css+'-dot"></span>'+myName(p)+' <span class="muted">· '+tokens.filter(v=>v===57).length+'/4 '+col.name+' HOME</span></h3><div class="token-tray">'+tokens.map((v,i)=>'<button class="token-pick '+col.css+'-token" data-token-owner="'+p+'" data-token-colour="'+colour+'" data-token="'+i+'" '+(g.turn!==p||g.dice===null||!ludoCanLand(g,colour,v,g.dice)||g.winner||room.players.length<2?'disabled':'')+'><span class="token-mini">● '+(i+1)+'</span><small>'+ludoPosLabel(v)+'</small></button>').join("")+'</div></div>';}
@@ -207,6 +211,7 @@ function renderLudo(g){
 }
 function ludoPosLabel(v){if(v===-1)return "Yard";if(v===57)return "Home";if(v>=52)return "Home lane "+(v-51);return "Track "+(v+1);}
 function renderLudoBoard(g){
+ ensureLudoState(g);
  const pathMap={};LUDO_PATH.forEach((rc,i)=>pathMap[rc[0]+","+rc[1]]=i);
  const homeMap={};
  for(let i=0;i<5;i++){homeMap["7,"+(i+1)]={colour:0,step:i};homeMap["7,"+(13-i)]={colour:3,step:i};homeMap[(i+1)+",7"]={colour:1,step:i};homeMap[(13-i)+",7"]={colour:2,step:i};}
@@ -227,7 +232,7 @@ function renderLudoBoard(g){
   else if(r<=5&&c>=9){cls+=" base-green";}
   else if(r>=9&&c<=5){cls+=" base-yellow";}
   else if(r>=9&&c>=9){cls+=" base-blue";}
-  if(r>=6&&r<=8&&c>=6&&c<=8){cls+=" center-home";if(r===7&&c===7)content='<div class="center-dice-area"><span class="center-heart">♥</span><span class="center-dice-hint">ROLL</span></div>';else if(r===6&&c===6)cls+=" center-red";else if(r===6&&c===8)cls+=" center-green";else if(r===8&&c===6)cls+=" center-yellow";else if(r===8&&c===8)cls+=" center-blue";}
+  if(r>=6&&r<=8&&c>=6&&c<=8){cls+=" center-home";if(r===7&&c===7){const active=me(),canRoll=g.turn===active&&g.dice===null&&!g.winner&&room.players.length>=2;content='<button id="rollDice" class="center-dice-button '+(canRoll?'ready':'')+'" aria-label="Tap the two central dice to roll" '+(canRoll?'':'disabled')+'><span class="center-dice-pair '+(g.dice!==null?'rolling-result':'')+'"><i class="ludo-die">'+ludoDieFace(g.roll?.[0]??null)+'</i><i class="ludo-die">'+ludoDieFace(g.roll?.[1]??null)+'</i></span><small>'+(g.dice===null?(g.roll?'LAST '+g.roll.reduce((a,b)=>a+b,0):'TAP TO ROLL'):'TOTAL '+g.dice)+'</small></button>';}else if(r===6&&c===6)cls+=" center-red";else if(r===6&&c===8)cls+=" center-green";else if(r===8&&c===6)cls+=" center-yellow";else if(r===8&&c===8)cls+=" center-blue";}
   const yard=yardMap[key];
   if(yard){const colour=yard.colour,col=LUDO_COLOURS[colour],tokenIndex=yard.i,pos=g.tokens[String(colour)][tokenIndex];cls+=" yard-cell yard-"+col.css;content=pos===-1?'<button class="yard-token '+col.css+'-token-bg" data-token-owner="'+col.owner+'" data-token-colour="'+colour+'" data-token="'+tokenIndex+'" aria-label="Move '+col.name.toLowerCase()+' seed '+(tokenIndex+1)+' out of yard" '+(me()!==col.owner||g.dice!==6||g.winner||room.players.length<2?'disabled':'')+'>'+(tokenIndex+1)+'</button>':"";}
   if((r<=5&&c<=5)||(r<=5&&c>=9)||(r>=9&&c<=5)||(r>=9&&c>=9)){const quad=(r<=5?(c<=5?"red":"green"):(c<=5?"yellow":"blue"));cls+=" base-"+quad;const inHome=(r>=1&&r<=4&&(c>=1&&c<=4||c>=10&&c<=13))||(r>=10&&r<=13&&(c>=1&&c<=4||c>=10&&c<=13));if(inHome)cls+=" base-home";if((r===2||r===4)&&(c===2||c===4)||(r===2||r===4)&&(c===10||c===12)||(r===10||r===12)&&(c===2||c===4)||(r===10||r===12)&&(c===10||c===12))cls+=" base-home-dot";}
