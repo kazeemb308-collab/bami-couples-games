@@ -177,6 +177,15 @@ body:has(#gameArea .naija-whot-table){overflow:hidden}
 .naija-whot-table .whot-arena { align-items:center; justify-content:center; gap:clamp(24px,10vw,90px); }
 .naija-whot-table .whot-pile { min-width:82px; }
 .naija-whot-table .discard-pile .top-playing-card { transform:none; }
+
+/* Shared match scoreboard */
+.overall-scoreboard{display:flex;align-items:center;justify-content:center;gap:clamp(8px,2vw,18px);flex-wrap:wrap;margin:10px auto 14px;padding:10px 14px;max-width:720px;border:1px solid #e8d8bb;border-radius:14px;background:linear-gradient(135deg,#fff8e8,#f7ead2);color:#4b321b;font-size:12px;box-shadow:0 3px 10px #0000000d}
+.overall-scoreboard>span{font-size:9px;font-weight:1000;letter-spacing:1.2px;color:#8d642d}
+.overall-scoreboard>b{font-size:13px;font-weight:1000}
+.overall-scoreboard>i{font-style:normal;color:#b99b72;font-weight:900}
+#gameArea:has(.naija-whot-table) .overall-scoreboard{margin:7px auto 8px;padding:7px 10px;background:#fff4d9;border-color:#f1d8a0;box-shadow:none}
+#gameArea:has(.naija-whot-table) .overall-scoreboard>span{font-size:8px}
+@media(max-width:440px){.overall-scoreboard{gap:7px;padding:8px;font-size:10px}.overall-scoreboard>b{font-size:11px}}
 </style>
 </head><body>
 <header><div class="brand">Bami <span>&</span> Oluwatosin <span>♥</span></div><div class="status" id="connectionStatus">Connecting…<br>Private couple room</div></header>
