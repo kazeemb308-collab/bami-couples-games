@@ -529,6 +529,41 @@ body:has(#gameArea .ludo-wrap) main{width:100%;max-width:none;padding:0!importan
   #gameArea:has(.ludo-wrap) .ludo-board{width:min(100%,calc(100vw - 16px))}
 }
 
+
+
+/* Clear, continuous pulse on every legal Ludo seed after a number is selected */
+#gameArea:has(.ludo-wrap) .ludo-move-hint{
+  position:relative;
+  z-index:8;
+  animation:ludo-eligible-pulse .78s ease-in-out infinite alternate;
+  outline:2px solid #fff!important;
+  outline-offset:2px;
+  box-shadow:0 0 0 3px #ffd95a,0 0 13px 5px #fff9,inset 0 2px 3px #ffffffa8,inset 0 -3px 4px #0003!important;
+  cursor:pointer;
+}
+#gameArea:has(.ludo-wrap) .ludo-move-hint::after{
+  content:"";
+  position:absolute;
+  inset:-5px;
+  border:2px solid #ffe16a;
+  border-radius:50%;
+  pointer-events:none;
+  animation:ludo-eligible-ring 1.1s ease-out infinite;
+}
+@keyframes ludo-eligible-pulse{
+  from{filter:brightness(1);transform:scale(1)}
+  to{filter:brightness(1.28);transform:scale(1.12)}
+}
+@keyframes ludo-eligible-ring{
+  0%{transform:scale(.8);opacity:.95}
+  100%{transform:scale(1.65);opacity:0}
+}
+@media(prefers-reduced-motion:reduce){
+ #gameArea:has(.ludo-wrap) .ludo-move-hint,
+ #gameArea:has(.ludo-wrap) .ludo-move-hint::after{animation:none}
+ #gameArea:has(.ludo-wrap) .ludo-move-hint{outline:3px solid #ffe16a!important;outline-offset:2px}
+}
+
 </style>
 </head><body>
 <header><div class="brand">Bami <span>&</span> Oluwatosin <span>♥</span></div><div class="status" id="connectionStatus">Connecting…<br>Private couple room</div></header>
@@ -557,4 +592,4 @@ window.addEventListener("unhandledrejection", function (event) {
   message.textContent = "Startup failed: " + reason;
 });
 </script>
-<script type="module" src="./app.js?v=20261016naija-ludo-premium"></script></body></html>
+<script type="module" src="./app.js?v=20261016naija-ludo-hints"></script></body></html>
