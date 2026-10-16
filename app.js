@@ -147,37 +147,56 @@ function playWhotCard(g,p,i,chosenShape){
  return true;
 }
 function ludoCanMove(pos,dice){if(dice===null||dice===undefined)return false;if(pos===-1)return dice===6;if(pos===57)return false;return pos+dice<=57;}
-function ensureLudoState(g){if(!g.tokens)g.tokens={};if(!Array.isArray(g.tokens["2"])&&!Array.isArray(g.tokens["3"])&&Array.isArray(g.tokens["1"])){g.tokens["3"]=g.tokens["1"].slice();g.tokens["1"]=[-1,-1,-1,-1];}for(let col=0;col<4;col++)if(!Array.isArray(g.tokens[String(col)]))g.tokens[String(col)]=[-1,-1,-1,-1];if(!Array.isArray(g.roll))g.roll=null;}
+function ensureLudoState(g){if(!g.tokens)g.tokens={};if(!Array.isArray(g.tokens["2"])&&!Array.isArray(g.tokens["3"])&&Array.isArray(g.tokens["1"])){g.tokens["3"]=g.tokens["1"].slice();g.tokens["1"]=[-1,-1,-1,-1];}for(let col=0;col<4;col++)if(!Array.isArray(g.tokens[String(col)]))g.tokens[String(col)]=[-1,-1,-1,-1];if(!Array.isArray(g.roll))g.roll=null;if(!Array.isArray(g.rolls))g.rolls=null;if(typeof g.hasCaptured!=="object"||!g.hasCaptured)g.hasCaptured={"0":false,"1":false};}
 function ludoOwner(colour){return colour<2?0:1;}
 function ludoGlobal(colour,pos){return (LUDO_START[colour]+pos)%52;}
+function ludoNext(pos,dice){return pos===-1?0:pos+dice;}
+function ludoIsPath(pos){return pos>=0&&pos<=51;}
+function ludoOwnAt(g,colour,pos,exclude){return (g.tokens[String(colour)]||[]).some((v,i)=>i!==exclude&&v>=0&&v<=51&&ludoGlobal(colour,v)===pos);}
 function ludoCanLand(g,colour,pos,dice){
- ensureLudoState(g);
- if(!ludoCanMove(pos,dice))return false;
- const next=pos===-1?0:pos+dice;
- if(next<0||next>51)return true;
+ ensureLudoState(g);if(!ludoCanMove(pos,dice))return false;
+ if(pos===-1)return dice===6;
+ const next=pos+dice;if(next>57)return false;
+ if(next>=52)return true;
  const landing=ludoGlobal(colour,next),owner=ludoOwner(colour);
- const opponents=[];
- for(let col=0;col<4;col++)if(ludoOwner(col)!==owner)(g.tokens[String(col)]||[]).forEach(v=>{if(v>=0&&v<=51&&ludoGlobal(col,v)===landing)opponents.push(v);});
- return LUDO_SAFE.has(landing)||opponents.length<2;
+ for(let col=0;col<4;col++){
+  const same=(g.tokens[String(col)]||[]).filter(v=>v>=0&&v<=51&&ludoGlobal(col,v)===landing).length;
+  if(col===colour&&same>=2)return false;
+  if(ludoOwner(col)!==owner&&same>=2&&!LUDO_SAFE.has(landing))return false;
+ }
+ if(LUDO_SAFE.has(landing))return true;
+ const enemyCount=[];for(let col=0;col<4;col++)if(ludoOwner(col)!==owner)(g.tokens[String(col)]||[]).forEach(v=>{if(v>=0&&v<=51&&ludoGlobal(col,v)===landing)enemyCount.push(v);});
+ return enemyCount.length<2;
 }
 function ludoLegalTokens(g,p){ensureLudoState(g);const out=[];for(let colour=0;colour<4;colour++)if(ludoOwner(colour)===p)(g.tokens[String(colour)]||[]).forEach((pos,i)=>{if(ludoCanLand(g,colour,pos,g.dice))out.push({colour,token:i});});return out;}
 function moveLudo(g,p,colour,tokenIndex){
- ensureLudoState(g);
- const own=g.tokens[String(colour)],pos=own[tokenIndex],dice=g.dice;if(ludoOwner(colour)!==p||g.turn!==p||!ludoCanLand(g,colour,pos,dice))return;
- const before=pos;own[tokenIndex]=pos===-1?0:pos+dice;let captured=false;
- if(own[tokenIndex]>=0&&own[tokenIndex]<=51){
-  const landing=ludoGlobal(colour,own[tokenIndex]),enemies=[];
-  for(let col=0;col<4;col++)if(ludoOwner(col)!==p)(g.tokens[String(col)]||[]).forEach((v,i)=>{if(v>=0&&v<=51&&ludoGlobal(col,v)===landing)enemies.push({colour:col,index:i});});
-  if(!LUDO_SAFE.has(landing)&&enemies.length===1){g.tokens[String(enemies[0].colour)][enemies[0].index]=-1;captured=true;}
-  else if(!LUDO_SAFE.has(landing)&&enemies.length>=2){own[tokenIndex]=before;g.message="That square is blocked by two opponent seeds. Choose another seed.";return;}
+ ensureLudoState(g);const own=g.tokens[String(colour)],pos=own[tokenIndex],dice=g.dice;
+ if(ludoOwner(colour)!==p||g.turn!==p||!ludoCanLand(g,colour,pos,dice))return;
+ if(pos===-1&&dice!==6)return;
+ const before=pos,next=pos===-1?0:pos+dice,landing=ludoIsPath(next)?ludoGlobal(colour,next):null;
+ if(landing!==null&&!LUDO_SAFE.has(landing)){
+  for(let col=0;col<4;col++)if(ludoOwner(col)!==p){
+   const enemies=(g.tokens[String(col)]||[]).map((v,i)=>({v,i})).filter(x=>x.v>=0&&x.v<=51&&ludoGlobal(col,x.v)===landing);
+   if(enemies.length>=2){g.message="That square is blockaded. You cannot land there.";return;}
+  }
  }
- const finished=own[tokenIndex]===57,allColours=colour<2?[0,1]:[2,3],allHome=allColours.every(col=>g.tokens[String(col)].every(v=>v===57));
+ own[tokenIndex]=next;let captured=false;
+ if(landing!==null&&!LUDO_SAFE.has(landing)){
+  for(let col=0;col<4;col++)if(ludoOwner(col)!==p){
+   const enemies=(g.tokens[String(col)]||[]).map((v,i)=>({v,i})).filter(x=>x.v>=0&&x.v<=51&&ludoGlobal(col,x.v)===landing);
+   if(enemies.length===1){g.tokens[String(col)][enemies[0].i]=-1;captured=true;}
+  }
+ }
+ if(captured)g.hasCaptured[String(p)]=true;
+ const finished=own[tokenIndex]===57,allColours=p===0?[0,1]:[2,3],allHome=allColours.every(col=>g.tokens[String(col)].every(v=>v===57));
+ const colName=LUDO_COLOURS[colour].name.toLowerCase();
  if(allHome){g.winner=room.players[p].name;g.message=g.winner+" wins Naija Ludo! 🏆";}
- else if(finished){g.message=room.players[p].name+" brought a "+LUDO_COLOURS[colour].name.toLowerCase()+" seed Home!";}
- else if(captured){g.message=room.players[p].name+" captured an opponent seed! Back to the yard!";}
- else if(before===-1){g.message=room.players[p].name+" brought a "+LUDO_COLOURS[colour].name.toLowerCase()+" seed out of the yard.";}
- else{g.message=room.players[p].name+" moved a "+LUDO_COLOURS[colour].name.toLowerCase()+" seed by "+dice+".";}
- const extra=dice===6||captured||finished;g.dice=null;g.roll=null;if(dice!==6)g.sixStreak=0;if(!g.winner&&!extra)g.turn=1-p;
+ else if(finished)g.message=room.players[p].name+" brought a "+colName+" seed Home!";
+ else if(captured)g.message=room.players[p].name+" captured an opponent seed! Bonus roll!";
+ else if(before===-1)g.message=room.players[p].name+" brought a "+colName+" seed out of the yard.";
+ else g.message=room.players[p].name+" moved a "+colName+" seed by "+dice+".";
+ const extra=(g.rolls||[]).includes(6)||captured||finished;g.dice=null;g.roll=null;g.rolls=null;
+ if(!g.winner&&!extra)g.turn=1-p;
 }
 function renderWhot(g){
  const p=me(),hand=g.hands[p]||[],opponent=1-p,opponentHand=g.hands[opponent]||[],top=g.top,dealt=!!top;
@@ -294,7 +313,7 @@ function wireGame(){
  document.querySelectorAll("[data-shape]").forEach(b=>b.onclick=()=>change(s=>{const g=s.whot,p=me(),shape=+b.dataset.shape;if(g.pendingShapePlayer!==p||g.pendingShapeIndex===null)return;playWhotCard(g,p,g.pendingShapeIndex,shape);}));
  const drawFromMarket=()=>change(s=>{const g=s.whot,p=me();if(g.turn!==p||g.winner||g.pendingShapePlayer!==null||room.players.length<2)return;if(g.pendingPenalty){const amount=g.pendingPenalty.amount;for(let n=0;n<amount;n++){const c=drawWhotCard(g);if(c)g.hands[p].push(c);}g.pendingPenalty=null;g.turn=1-p;g.message=room.players[p].name+" picked "+amount+" card(s) from the Market. Turn passes.";}else{const c=drawWhotCard(g);if(!c){g.message="No cards remain to draw. Restart the game.";return;}g.hands[p].push(c);g.turn=1-p;g.message=room.players[p].name+" picked a card from the Market. Turn passes.";}});const dr=$("drawCard");if(dr)dr.onclick=drawFromMarket;const pile=$("drawPile");if(pile)pile.onclick=drawFromMarket;
  const rw=$("resetWhot");if(rw)rw.onclick=()=>change(s=>{s.whot=newWhot();});
- const roll=$("rollDice");if(roll)roll.onclick=()=>{if(roll.disabled||roll.dataset.rolling==="1")return;roll.dataset.rolling="1";roll.disabled=true;roll.classList.add("is-rolling");roll.querySelectorAll(".ludo-die").forEach(d=>d.textContent="🎲");setTimeout(()=>{change(s=>{const g=s.ludo,p=me();if(g.turn!==p||g.dice!==null||g.winner||room.players.length<2)return;const a=1+Math.floor(Math.random()*6),b=1+Math.floor(Math.random()*6),rolled=a+b;g.roll=[a,b];g.lastRoll=rolled;g.dice=rolled;if(rolled===6){g.sixStreak=(g.sixStreak||0)+1;if(g.sixStreak>=3){g.message=room.players[p].name+" rolled a total of 6 three times in a row! Turn forfeited.";g.turn=1-p;g.dice=null;g.roll=null;g.sixStreak=0;return;}}else g.sixStreak=0;const legal=ludoLegalTokens(g,p);if(!legal.length){g.message=room.players[p].name+" rolled "+a+" + "+b+" = "+rolled+" but has no legal move. Turn passes.";g.turn=1-p;g.dice=null;g.roll=null;g.sixStreak=0;}else g.message=room.players[p].name+" rolled "+a+" + "+b+" = "+rolled+". Tap one of your movable seeds.";}).finally(()=>{const current=$("rollDice");if(current){current.dataset.rolling="";current.classList.remove("is-rolling");}});},720);};
+ const roll=$("rollDice");if(roll)roll.onclick=()=>{if(roll.disabled||roll.dataset.rolling==="1")return;roll.dataset.rolling="1";roll.disabled=true;roll.classList.add("is-rolling");roll.querySelectorAll(".ludo-die").forEach(d=>d.textContent="🎲");setTimeout(()=>{change(s=>{const g=s.ludo,p=me();ensureLudoState(g);if(g.turn!==p||g.dice!==null||g.winner||room.players.length<2)return;const a=1+Math.floor(Math.random()*6),b=1+Math.floor(Math.random()*6),rolls=[a,b],rolled=a+b;g.roll=rolls;g.rolls=rolls;g.lastRoll=rolled;if(a===6&&b===6){g.sixStreak=(g.sixStreak||0)+1;}else if(a===6||b===6){g.sixStreak=(g.sixStreak||0)+1;}else g.sixStreak=0;if(g.sixStreak>=3){g.message=room.players[p].name+" rolled three consecutive sixes. Turn forfeited!";g.turn=1-p;g.dice=null;g.roll=null;g.rolls=null;g.sixStreak=0;return;}g.dice=rolled;const legal=ludoLegalTokens(g,p);if(!legal.length){g.message=room.players[p].name+" rolled "+a+" + "+b+" = "+rolled+" but has no legal move. Turn passes.";g.turn=1-p;g.dice=null;g.roll=null;g.rolls=null;g.sixStreak=0;}else g.message=room.players[p].name+" rolled "+a+" + "+b+" = "+rolled+". Tap one of your movable seeds.";}).finally(()=>{const current=$("rollDice");if(current){current.dataset.rolling="";current.classList.remove("is-rolling");}});},720);};
  document.querySelectorAll("[data-token-owner]").forEach(b=>b.onclick=()=>change(s=>{const g=s.ludo,p=me(),owner=+b.dataset.tokenOwner,colour=+b.dataset.tokenColour,token=+b.dataset.token;if(owner!==p||g.turn!==p||g.winner||room.players.length<2)return;moveLudo(g,p,colour,token);}));
  const rl=$("resetLudo");if(rl)rl.onclick=()=>change(s=>{s.ludo=newLudo();});
  document.querySelectorAll("[data-answer]").forEach(b=>b.onclick=()=>change(s=>{if(room.players.length<2)return;if(Array.isArray(s.quiz.answers))s.quiz.answers={};s.quiz.answers[me()]=+b.dataset.answer;}));
