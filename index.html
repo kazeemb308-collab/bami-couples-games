@@ -359,6 +359,65 @@ body:has(#gameArea .naija-whot-table){overflow:hidden}
 .ludo-player .token-pick{color:white}
 @media(max-width:600px){.ludo-head-center{padding:7px}.ludo-head-center .ludo-message{min-width:0}.ludo-match-badge{width:100%;font-size:9px}.ludo-board-frame{padding:4px}.ludo-board{width:100%;gap:1px}.center-dice-pair .ludo-die{font-size:clamp(7px,2.4vw,15px)}.center-dice-button small{font-size:clamp(3px,.8vw,5px)}}
 
+
+/* Naija Ludo board rebuild: vivid four-home cross, clear track and mobile-first play */
+#gameArea:has(.ludo-wrap){padding:0!important;max-width:none!important}
+body:has(#gameArea .ludo-wrap) header,
+body:has(#gameArea .ludo-wrap) main>.hero,
+body:has(#gameArea .ludo-wrap) .overall-scoreboard{display:none!important}
+body:has(#gameArea .ludo-wrap) main{width:100%;max-width:none;padding:0!important;margin:0!important}
+#gameArea:has(.ludo-wrap) .whot-screen-header{position:sticky;top:0;z-index:20;margin:0;padding:7px 10px;background:#07172a;border-bottom:1px solid #ffffff1a}
+#gameArea:has(.ludo-wrap) .ludo-wrap{width:100%;max-width:760px;margin:0 auto;padding:4px 8px 16px;box-sizing:border-box}
+#gameArea:has(.ludo-wrap) .ludo-head{border:0;border-radius:10px;padding:8px 10px;background:linear-gradient(115deg,#101d32,#172b43);box-shadow:0 3px 12px #0003}
+#gameArea:has(.ludo-wrap) .ludo-message b{font-size:13px;line-height:1.25}
+#gameArea:has(.ludo-wrap) .ludo-message p{font-size:10px;margin:3px 0 0}
+#gameArea:has(.ludo-wrap) .ludo-match-badge{font-size:9px;letter-spacing:.35px}
+#gameArea:has(.ludo-wrap) .ludo-board-frame{max-width:660px;margin:6px auto 10px;padding:8px;background:linear-gradient(145deg,#f7d889,#b77a32 55%,#f5d58a);border:1px solid #fff1c4;border-radius:13px;box-shadow:0 8px 24px #0005,inset 0 0 0 2px #8a5a25}
+#gameArea:has(.ludo-wrap) .ludo-board-title{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:2px 4px 7px;color:#39220c;font-size:11px;letter-spacing:1px}
+#gameArea:has(.ludo-wrap) .ludo-board-title span{font-size:9px;font-weight:900;letter-spacing:.4px}
+#gameArea:has(.ludo-wrap) .ludo-board{width:100%;max-width:620px;margin:0 auto;aspect-ratio:1;gap:1px;padding:0;border:3px solid #fffaf0;border-radius:3px;background:#fffaf0;box-shadow:0 3px 9px #43260b66;overflow:hidden}
+#gameArea:has(.ludo-wrap) .ludo-cell{position:relative;font-size:clamp(5px,1.3vw,11px);border-radius:0;box-shadow:none}
+#gameArea:has(.ludo-wrap) .ludo-cell.track-cell{background:#fffdf7!important;border:1px solid #d6d0c1}
+#gameArea:has(.ludo-wrap) .ludo-cell.safe-cell{background:#ffedaa!important;color:#9d6500}
+#gameArea:has(.ludo-wrap) .ludo-cell.red-start{background:#d92951!important}
+#gameArea:has(.ludo-wrap) .ludo-cell.green-start{background:#168b4d!important}
+#gameArea:has(.ludo-wrap) .ludo-cell.yellow-start{background:#e8b927!important}
+#gameArea:has(.ludo-wrap) .ludo-cell.blue-start{background:#2166d1!important}
+#gameArea:has(.ludo-wrap) .ludo-cell.base-red{background:#d92951!important}
+#gameArea:has(.ludo-wrap) .ludo-cell.base-green{background:#159653!important}
+#gameArea:has(.ludo-wrap) .ludo-cell.base-yellow{background:#f2c32f!important}
+#gameArea:has(.ludo-wrap) .ludo-cell.base-blue{background:#246bd8!important}
+#gameArea:has(.ludo-wrap) .ludo-cell.base-home{background:#fffdf6!important;box-shadow:inset 0 0 0 1px #ded7c8}
+#gameArea:has(.ludo-wrap) .ludo-cell.base-home-dot:after{content:"";position:absolute;left:17%;top:17%;width:66%;height:66%;border:2px solid #d8d0c2;border-radius:50%;background:#fff;box-shadow:inset 0 0 0 3px #f5f0e5,0 1px 2px #0002}
+#gameArea:has(.ludo-wrap) .ludo-cell.yard-cell{z-index:2;background:#fffdf6!important;box-shadow:inset 0 0 0 1px #ded7c8}
+#gameArea:has(.ludo-wrap) .yard-token{position:relative;z-index:3;width:72%;height:72%;border:3px solid #fff;box-shadow:inset 0 0 0 3px #ffffff70,0 2px 3px #0005}
+#gameArea:has(.ludo-wrap) .ludo-cell.home-lane{border:1px solid #ffffffb8}
+#gameArea:has(.ludo-wrap) .ludo-cell.center-home{background:#fffaf0!important}
+#gameArea:has(.ludo-wrap) .ludo-cell.center-red{background:#d92951!important}
+#gameArea:has(.ludo-wrap) .ludo-cell.center-green{background:#159653!important}
+#gameArea:has(.ludo-wrap) .ludo-cell.center-yellow{background:#f2c32f!important}
+#gameArea:has(.ludo-wrap) .ludo-cell.center-blue{background:#246bd8!important}
+#gameArea:has(.ludo-wrap) .center-dice-button{border-radius:4px;background:linear-gradient(145deg,#12223a,#07101f);box-shadow:inset 0 0 0 1px #ffffff55}
+#gameArea:has(.ludo-wrap) .center-dice-button.ready{box-shadow:inset 0 0 0 2px #ffd96d,0 0 9px #ffd96d66}
+#gameArea:has(.ludo-wrap) .center-dice-pair .ludo-die{border:1px solid #cfc6b5;border-radius:4px;box-shadow:0 2px 0 #b6a991,0 3px 4px #0004}
+#gameArea:has(.ludo-wrap) .ludo-player{margin:6px auto 0;padding:7px 9px;border-radius:10px;max-width:660px}
+#gameArea:has(.ludo-wrap) .ludo-player h3{font-size:12px;margin:0 0 5px}
+#gameArea:has(.ludo-wrap) .token-tray{grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}
+#gameArea:has(.ludo-wrap) .token-pick{padding:5px 2px;gap:2px}
+#gameArea:has(.ludo-wrap) .token-pick small{font-size:9px}
+@media(max-width:600px){
+ body:has(#gameArea .ludo-wrap){background:#07101e}
+ #gameArea:has(.ludo-wrap) .ludo-wrap{padding:3px 5px 10px}
+ #gameArea:has(.ludo-wrap) .ludo-board-frame{padding:5px;margin:4px auto 7px;border-radius:9px}
+ #gameArea:has(.ludo-wrap) .ludo-board-title{padding:1px 2px 5px}
+ #gameArea:has(.ludo-wrap) .ludo-board{width:min(100%, calc(100vw - 20px));}
+ #gameArea:has(.ludo-wrap) .ludo-head{padding:6px 8px}
+ #gameArea:has(.ludo-wrap) .ludo-match-badge{width:auto}
+ #gameArea:has(.ludo-wrap) .ludo-player{padding:5px 7px}
+ #gameArea:has(.ludo-wrap) .ludo-player h3{font-size:11px}
+ #gameArea:has(.ludo-wrap) .token-pick{min-height:35px}
+}
+
 </style>
 </head><body>
 <header><div class="brand">Bami <span>&</span> Oluwatosin <span>♥</span></div><div class="status" id="connectionStatus">Connecting…<br>Private couple room</div></header>
