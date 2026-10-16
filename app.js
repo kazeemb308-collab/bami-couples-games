@@ -107,20 +107,25 @@ function drawWhotCard(g){
  if(!g.deck.length&&g.discard.length){g.deck=shuffle(g.discard);g.discard=[];}
  return g.deck.length?g.deck.pop():null;
 }
-function whotCanPlay(c,g){if(g.pendingPenalty)return c.n===g.pendingPenalty.type;const activeShape=g.top.s===5?g.calledShape:g.top.s;return c.s===5||c.s===activeShape||c.n===g.top.n;}
+function whotCanPlay(c,g){return !!c;}
 function playWhotCard(g,p,i,chosenShape){
  const hand=g.hands[p]||[],c=hand[i];if(!c)return false;
  if(c.s===5&&chosenShape===undefined){g.pendingShapeIndex=i;g.pendingShapePlayer=p;g.message="Choose the shape you want to call with WHOT 20.";return false;}
- if(!whotCanPlay(c,g)){g.message=g.pendingPenalty?"Defend with another "+g.pendingPenalty.type+" or draw "+g.pendingPenalty.amount+" cards.":"That card cannot be played. Match the shape or number, or use WHOT 20.";return false;}
+ if(g.pendingPenalty&&c.n!==g.pendingPenalty.type){g.message='Block the Pick '+g.pendingPenalty.type+' with the same card, or draw '+g.pendingPenalty.amount+' cards.';return false;}
  if(c.s===5&&(!Number.isInteger(chosenShape)||chosenShape<0||chosenShape>4))return false;
  const oldPenalty=g.pendingPenalty?{...g.pendingPenalty}:null;
  hand.splice(i,1);g.discard.push(g.top);g.top=c;g.calledShape=c.s===5?chosenShape:null;g.pendingShapeIndex=null;g.pendingShapePlayer=null;g.pendingPenalty=null;
  if(!hand.length){g.winner=room.players[p].name;g.message=g.winner+" wins Naija WHOT! 🎉";return true;}
  const opponent=1-p;
  if(oldPenalty){
-  const amount=oldPenalty.amount+(c.n===oldPenalty.type?(c.n===2?2:3):0);
-  g.pendingPenalty={type:oldPenalty.type,amount,player:opponent};g.turn=opponent;
-  g.message=room.players[p].name+" defended the Pick "+(oldPenalty.type===2?"Two":"Three")+"! The next player must defend or draw "+amount+" cards.";
+  if(c.n===oldPenalty.type){
+   g.pendingPenalty=null;g.turn=opponent;
+   g.message=room.players[p].name+" blocked the Pick "+(oldPenalty.type===2?"Two":"Three")+"! Penalty cancelled.";
+  }else{
+   g.pendingPenalty={type:oldPenalty.type,amount:oldPenalty.amount,player:opponent};g.turn=opponent;
+   g.message=room.players[p].name+" did not block the penalty. Pick "+oldPenalty.amount+" remains for the next player.";
+  }
+ }else if(c.n===2&&c.s!==5){
  }else if(c.n===2&&c.s!==5){
   g.pendingPenalty={type:2,amount:2,player:opponent};g.turn=opponent;g.message="Pick Two! "+room.players[opponent].name+" can defend with another 2 or draw 2 cards.";
  }else if(c.n===5&&c.s!==5){
@@ -165,7 +170,7 @@ function renderWhot(g){
    h+='';
    if(g.pendingShapePlayer===p&&g.pendingShapeIndex!==null)h+='<div class="shape-picker"><div class="shape-options">'+shapeNames.map((n,i)=>'<button class="shape-choice" data-shape="'+i+'" aria-label="'+n+'"><span>'+shapeGlyphs[i]+'</span></button>').join("")+'</div></div>';
    else if(g.pendingShapePlayer!==null)h+='';
-   h+='<div class="cards whot-hand">'+hand.map((c,i)=>'<button class="playingcard '+(c.s===5?"whot-card":"suit-"+c.s)+' '+(whotCanPlay(c,g)?"can-play":"cannot-play")+'" data-card="'+i+'" aria-label="'+esc(cardLabel(c)+" "+(c.s===5?"WHOT":shapeNames[c.s]))+'" '+(g.turn!==p||g.winner||room.players.length<2||g.pendingShapePlayer!==null||!whotCanPlay(c,g)?'disabled':'')+'>'+whotFace(c,c.s===5?"WHOT":shapeNames[c.s])+'</button>').join("")+'</div>';
+   h+='<div class="cards whot-hand">'+hand.map((c,i)=>'<button class="playingcard '+(c.s===5?"whot-card":"suit-"+c.s)+' '+"can-play"+'" data-card="'+i+'" aria-label="'+esc(cardLabel(c)+" "+(c.s===5?"WHOT":shapeNames[c.s]))+'" '+(g.turn!==p||g.winner||room.players.length<2||g.pendingShapePlayer!==null?'disabled':'')+'>'+whotFace(c,c.s===5?"WHOT":shapeNames[c.s])+'</button>').join("")+'</div>';
   h+='<div class="actions center-actions"><button id="drawCard" class="gold" '+(g.turn!==p||g.winner||room.players.length<2||g.pendingShapePlayer!==null?'disabled':'')+'>'+(g.pendingPenalty?"Pick "+g.pendingPenalty.amount+" cards":"Draw from Market")+'</button><button id="resetWhot" class="secondary">Restart WHOT</button></div>';
  }
  h+='</div>';return h;
@@ -232,7 +237,7 @@ function wireGame(){
  const back=$("backToGames");if(back)back.onclick=()=>{gameOpen=false;const picker=document.querySelector(".games"),area=$("gameArea");picker.classList.remove("hidden");area.classList.add("hidden");picker.scrollIntoView({behavior:"smooth",block:"start"});};
  const rt=$("resetTtt");if(rt)rt.onclick=()=>change(s=>{s.ttt={cells:Array(9).fill(""),turn:"X",winner:"",moves:0};});
  const dealWhotBtn=$("dealWhot"),dealPile=$("dealPile");const tapToDeal=()=>change(s=>{const g=s.whot;if(g.dealt||g.top||room.players.length<2)return;const ready=Array.isArray(g.readyPlayers)?g.readyPlayers:[];if(ready.includes(me()))return;g.readyPlayers=ready.concat(me());if(g.readyPlayers.length>=2)dealWhot(g);else g.message=room.players[me()].name+" is ready. Waiting for the other player to tap the deck.";});if(dealWhotBtn)dealWhotBtn.onclick=tapToDeal;if(dealPile)dealPile.onclick=tapToDeal;
-  document.querySelectorAll("[data-card]").forEach(b=>b.onclick=()=>change(s=>{const g=s.whot,p=me(),i=+b.dataset.card,c=(g.hands[p]||[])[i];if(g.turn!==p||g.winner||g.pendingShapePlayer!==null||room.players.length<2||!c||!whotCanPlay(c,g))return;if(c.s===5){g.pendingShapeIndex=i;g.pendingShapePlayer=p;g.message="Choose the shape to call.";return;}playWhotCard(g,p,i);}));
+  document.querySelectorAll("[data-card]").forEach(b=>b.onclick=()=>change(s=>{const g=s.whot,p=me(),i=+b.dataset.card,c=(g.hands[p]||[])[i];if(g.turn!==p||g.winner||g.pendingShapePlayer!==null||room.players.length<2||!c)return;if(c.s===5){g.pendingShapeIndex=i;g.pendingShapePlayer=p;g.message="Choose the shape to call.";return;}playWhotCard(g,p,i);}));
  document.querySelectorAll("[data-shape]").forEach(b=>b.onclick=()=>change(s=>{const g=s.whot,p=me(),shape=+b.dataset.shape;if(g.pendingShapePlayer!==p||g.pendingShapeIndex===null)return;playWhotCard(g,p,g.pendingShapeIndex,shape);}));
  const drawFromMarket=()=>change(s=>{const g=s.whot,p=me();if(g.turn!==p||g.winner||g.pendingShapePlayer!==null||room.players.length<2)return;if(g.pendingPenalty){const amount=g.pendingPenalty.amount;for(let n=0;n<amount;n++){const c=drawWhotCard(g);if(c)g.hands[p].push(c);}g.pendingPenalty=null;g.turn=1-p;g.message=room.players[p].name+" picked "+amount+" card(s) from the Market. Turn passes.";}else{const c=drawWhotCard(g);if(!c){g.message="No cards remain to draw. Restart the game.";return;}g.hands[p].push(c);g.turn=1-p;g.message=room.players[p].name+" picked a card from the Market. Turn passes.";}});const dr=$("drawCard");if(dr)dr.onclick=drawFromMarket;const pile=$("drawPile");if(pile)pile.onclick=drawFromMarket;
  const rw=$("resetWhot");if(rw)rw.onclick=()=>change(s=>{s.whot=newWhot();});
