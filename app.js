@@ -54,7 +54,7 @@ function dealWhot(g){
  const top=rest.splice(topIndex,1)[0],turn=Math.floor(Math.random()*2);
  Object.assign(g,{deck:rest,discard:[],hands,top,calledShape:null,turn,winner:"",pendingShapeIndex:null,pendingShapePlayer:null,pendingPenalty:null,dealt:true,readyPlayers:[],message:"Cards dealt randomly! "+room.players[turn].name+" starts."});
 }
-function newLudo(){return {tokens:{"0":[-1,-1,-1,-1],"1":[-1,-1,-1,-1]},turn:0,dice:null,winner:"",message:"Roll a 6 to bring a token out of the yard. Reach Home with an exact roll."};}
+function newLudo(){return {tokens:{"0":[-1,-1,-1,-1],"1":[-1,-1,-1,-1]},turn:0,dice:null,sixStreak:0,winner:"",message:"Roll a 6 to bring a token out. Capture opponents, use safe squares, and reach Home with an exact roll."};}
 function initialState(){return {scores:[0,0],ttt:{cells:Array(9).fill(""),turn:"X",winner:"",moves:0},whot:newWhot(),ludo:newLudo(),quiz:{index:0,answers:{},scores:[0,0]},truth:{turn:0,prompt:"Choose Truth or Dare to begin."}};}
 function me(){return room?room.players.findIndex(p=>p.id===playerId):-1;}
 function myName(p){return esc((room.players[p]||{}).name||("Player "+(p+1)));}
@@ -146,25 +146,32 @@ function playWhotCard(g,p,i,chosenShape){
  return true;
 }
 function ludoCanMove(pos,dice){if(dice===null||dice===undefined)return false;if(pos===-1)return dice===6;if(pos===57)return false;return pos+dice<=57;}
-function ludoLegalTokens(g,p){return (g.tokens[String(p)]||[]).map((pos,i)=>ludoCanMove(pos,g.dice)?i:-1).filter(i=>i>=0);}
 function ludoGlobal(p,pos){return (LUDO_START[p]+pos)%52;}
+function ludoCanLand(g,p,pos,dice){
+ if(!ludoCanMove(pos,dice))return false;
+ const next=pos===-1?0:pos+dice;
+ if(next<0||next>51)return true;
+ const landing=ludoGlobal(p,next),opponents=g.tokens[String(1-p)]||[];
+ const stacked=opponents.filter(v=>v>=0&&v<=51&&ludoGlobal(1-p,v)===landing).length;
+ return LUDO_SAFE.has(landing)||stacked<2;
+}
+function ludoLegalTokens(g,p){return (g.tokens[String(p)]||[]).map((pos,i)=>ludoCanLand(g,p,pos,g.dice)?i:-1).filter(i=>i>=0);}
 function moveLudo(g,p,tokenIndex){
- const own=g.tokens[String(p)],pos=own[tokenIndex],dice=g.dice;if(g.turn!==p||!ludoCanMove(pos,dice))return;
- const before=pos;own[tokenIndex]=pos===-1?0:pos+dice;let captured=false;
+ const own=g.tokens[String(p)],pos=own[tokenIndex],dice=g.dice;if(g.turn!==p||!ludoCanLand(g,p,pos,dice))return;
+ const before=pos;own[tokenIndex]=pos===-1?0:pos+dice;let captured=false,blocked=false;
  if(own[tokenIndex]>=0&&own[tokenIndex]<=51){
-  const landing=ludoGlobal(p,own[tokenIndex]);
-  if(!LUDO_SAFE.has(landing)){
-   const opp=g.tokens[String(1-p)];
-   for(let i=0;i<opp.length;i++){if(opp[i]>=0&&opp[i]<=51&&ludoGlobal(1-p,opp[i])===landing){opp[i]=-1;captured=true;}}
-  }
+  const landing=ludoGlobal(p,own[tokenIndex]),opp=g.tokens[String(1-p)];
+  const enemies=opp.map((v,i)=>({v,i})).filter(x=>x.v>=0&&x.v<=51&&ludoGlobal(1-p,x.v)===landing);
+  if(!LUDO_SAFE.has(landing)&&enemies.length===1){opp[enemies[0].i]=-1;captured=true;}
+  else if(!LUDO_SAFE.has(landing)&&enemies.length>=2){own[tokenIndex]=before;g.message="That square is blocked by two opponent tokens. Choose another token.";return;}
  }
  const finished=own[tokenIndex]===57;
  if(own.every(v=>v===57)){g.winner=room.players[p].name;g.message=g.winner+" wins Ludo! 🏆";}
  else if(finished){g.message=room.players[p].name+" brought token "+(tokenIndex+1)+" Home!";}
- else if(captured){g.message=room.players[p].name+" captured an opponent token!";}
- else if(before===-1){g.message=room.players[p].name+" brought token "+(tokenIndex+1)+" out of the yard.";}
+ else if(captured){g.message=room.players[p].name+" captured an opponent token! Back to the yard!";}
+ else if(before===-1){g.message=room.players[p].name+" brought token "+(tokenIndex+1)+" out of the yard." ;}
  else{g.message=room.players[p].name+" moved token "+(tokenIndex+1)+" by "+dice+".";}
- const extra=dice===6||captured||finished;g.dice=null;if(!g.winner&&!extra)g.turn=1-p;
+ const extra=dice===6||captured||finished;g.dice=null;if(dice!==6)g.sixStreak=0;if(!g.winner&&!extra)g.turn=1-p;
 }
 function renderWhot(g){
  const p=me(),hand=g.hands[p]||[],opponent=1-p,opponentHand=g.hands[opponent]||[],top=g.top,dealt=!!top;
@@ -187,12 +194,13 @@ function renderWhot(g){
  h+='</div>';return h;
 }
 function renderLudo(g){
- const p=me(),dice=g.dice,legal=ludoLegalTokens(g,p);
- let h='<div class="ludo-wrap"><div class="ludo-head"><div><div class="muted">DICE</div><div class="ludo-dice">'+(dice===null?"⚄":dice)+'</div></div><div class="ludo-message">'+esc(g.message)+'<p class="muted">Turn: '+myName(g.turn)+'</p></div><button id="rollDice" '+(g.turn!==p||dice!==null||g.winner||room.players.length<2?'disabled':'')+'>Roll dice</button></div>';
- h+=renderLudoBoard(g);
- h+='<div class="ludo-player red-player"><h3>🔴 '+myName(0)+' <span class="muted">· '+g.tokens["0"].filter(v=>v===57).length+'/4 home</span></h3><div class="token-tray">'+g.tokens["0"].map((v,i)=>'<button class="token-pick red-token" data-token-player="0" data-token="'+i+'" '+(p!==0||g.dice===null||!ludoCanMove(v,g.dice)||g.winner||room.players.length<2?'disabled':'')+'>● '+(i+1)+' <small>'+ludoPosLabel(v)+'</small></button>').join("")+'</div></div>';
- h+='<div class="ludo-player blue-player"><h3>🔵 '+myName(1)+' <span class="muted">· '+g.tokens["1"].filter(v=>v===57).length+'/4 home</span></h3><div class="token-tray">'+g.tokens["1"].map((v,i)=>'<button class="token-pick blue-token" data-token-player="1" data-token="'+i+'" '+(p!==1||g.dice===null||!ludoCanMove(v,g.dice)||g.winner||room.players.length<2?'disabled':'')+'>● '+(i+1)+' <small>'+ludoPosLabel(v)+'</small></button>').join("")+'</div></div>';
- h+='<div class="actions center-actions"><button id="resetLudo" class="secondary">Restart Ludo</button></div><p class="notice">Two-player Ludo: four tokens each, six to leave the yard, captures send tokens back, safe squares protect tokens, and you need an exact roll to reach Home. A 6, capture, or reaching Home earns another turn.</p></div>';
+ const p=me(),dice=g.dice;
+ const tokenButtons=player=>g.tokens[String(player)].map((v,i)=>'<button class="token-pick '+(player===0?'red-token':'blue-token')+'" data-token-player="'+player+'" data-token="'+i+'" '+(p!==player||g.dice===null||!ludoCanLand(g,player,v,g.dice)||g.winner||room.players.length<2?'disabled':'')+'><span class="token-mini">● '+(i+1)+'</span><small>'+ludoPosLabel(v)+'</small></button>').join("");
+ let h='<div class="ludo-wrap"><div class="ludo-head"><div class="dice-card"><div class="muted">YOUR DICE</div><div class="ludo-dice">'+(dice===null?"⚄":dice)+'</div></div><div class="ludo-message"><b>'+esc(g.message)+'</b><p class="muted">Turn: '+myName(g.turn)+(g.sixStreak?' · Six streak: '+g.sixStreak+'/3':'')+'</p></div><button id="rollDice" '+(g.turn!==p||dice!==null||g.winner||room.players.length<2?'disabled':'')+'>🎲 Roll dice</button></div>';
+ h+='<div class="ludo-board-frame"><div class="ludo-board-title"><b>NAIJA LUDO</b><span>RED vs BLUE</span></div>'+renderLudoBoard(g)+'</div>';
+ h+='<div class="ludo-player red-player"><h3><span class="player-colour-dot red-dot"></span>'+myName(0)+' <span class="muted">· '+g.tokens["0"].filter(v=>v===57).length+'/4 HOME</span></h3><div class="token-tray">'+tokenButtons(0)+'</div></div>';
+ h+='<div class="ludo-player blue-player"><h3><span class="player-colour-dot blue-dot"></span>'+myName(1)+' <span class="muted">· '+g.tokens["1"].filter(v=>v===57).length+'/4 HOME</span></h3><div class="token-tray">'+tokenButtons(1)+'</div></div>';
+ h+='<div class="ludo-rules"><b>HOW TO WIN</b><span>Roll a 6 to leave the yard · Capture single enemy tokens · Two tokens block a square · Safe stars protect tokens · Exact roll to finish · Three sixes in a row loses your turn</span></div></div>';
  return h;
 }
 function ludoPosLabel(v){if(v===-1)return "Yard";if(v===57)return "Home";if(v>=52)return "Home lane "+(v-51);return "Track "+(v+1);}
@@ -200,29 +208,28 @@ function renderLudoBoard(g){
  const pathMap={};LUDO_PATH.forEach((rc,i)=>pathMap[rc[0]+","+rc[1]]=i);
  const homeMap={};
  for(let i=0;i<5;i++){homeMap["7,"+(i+1)]={p:0,step:i};homeMap["7,"+(13-i)]={p:1,step:i};homeMap[(i+1)+",7"]={p:2,step:i};homeMap[(13-i)+",7"]={p:3,step:i};}
- const yardMap={};
- const yardDefs=[{p:0,cells:[[1,1],[1,4],[4,1],[4,4]]},{p:1,cells:[[10,10],[10,13],[13,10],[13,13]]}];
+ const yardMap={},yardDefs=[{p:0,cells:[[1,1],[1,4],[4,1],[4,4]]},{p:1,cells:[[10,10],[10,13],[13,10],[13,13]]}];
  yardDefs.forEach(d=>d.cells.forEach((rc,i)=>yardMap[rc.join(",")]={p:d.p,i}));
- let out='<div class="ludo-board" role="img" aria-label="Classic four-colour Ludo board. Red and blue are the two playable homes.">';
+ let out='<div class="ludo-board" role="group" aria-label="Four-colour Nigerian Ludo board">';
  for(let r=0;r<15;r++)for(let c=0;c<15;c++){
   const key=r+","+c,trackIndex=pathMap[key],lane=homeMap[key];let cls="ludo-cell",content="";
   if(trackIndex!==undefined){
    cls+=" track-cell";if(LUDO_SAFE.has(trackIndex))cls+=" safe-cell";
-   const pieces=[];
-   for(let p=0;p<2;p++)g.tokens[String(p)].forEach((pos,i)=>{if(pos>=0&&pos<=51&&ludoGlobal(p,pos)===trackIndex)pieces.push('<span class="board-token '+(p===0?"red-token-bg":"blue-token-bg")+'">'+(i+1)+'</span>');});
-   content=(LUDO_SAFE.has(trackIndex)?"★":"")+pieces.join("");
+   const pieces=[];for(let p=0;p<2;p++)g.tokens[String(p)].forEach((pos,i)=>{if(pos>=0&&pos<=51&&ludoGlobal(p,pos)===trackIndex)pieces.push('<button class="board-token board-token-button '+(p===0?"red-token-bg":"blue-token-bg")+'" data-token-player="'+p+'" data-token="'+i+'" aria-label="Move '+(p===0?"red":"blue")+' token '+(i+1)+'" '+(me()!==p||g.dice===null||!ludoCanLand(g,p,pos,g.dice)||g.winner||room.players.length<2?'disabled':'')+'>'+(i+1)+'</button>');});
+   content=(LUDO_SAFE.has(trackIndex)?'<span class="safe-star">★</span>':"")+pieces.join("");
    if(trackIndex===LUDO_START[0])cls+=" red-start";if(trackIndex===LUDO_START[1])cls+=" blue-start";
   }else if(lane){
-   const laneColor=["red-lane","blue-lane","green-lane","yellow-lane"][lane.p];cls+=" home-lane "+laneColor;
-   if(lane.p<2){const pos=52+lane.step;const pieces=[];g.tokens[String(lane.p)].forEach((v,i)=>{if(v===pos)pieces.push('<span class="board-token '+(lane.p===0?"red-token-bg":"blue-token-bg")+'">'+(i+1)+'</span>');});content=pieces.join("")||(lane.step===4?"◆":"");}
+   cls+=" home-lane "+["red-lane","blue-lane","green-lane","yellow-lane"][lane.p];
+   if(lane.p<2){const pos=52+lane.step;const pieces=[];g.tokens[String(lane.p)].forEach((v,i)=>{if(v===pos)pieces.push('<button class="board-token board-token-button '+(lane.p===0?"red-token-bg":"blue-token-bg")+'" data-token-player="'+lane.p+'" data-token="'+i+'" aria-label="Move token '+(i+1)+' home" '+(me()!==lane.p||g.dice===null||!ludoCanLand(g,lane.p,v,g.dice)||g.winner||room.players.length<2?'disabled':'')+'>'+(i+1)+'</button>');});content=pieces.join("")||(lane.step===4?"◆":"");}
    else content=lane.step===4?"◆":"";
   }else if(r<=5&&c<=5){cls+=" base-red";}
   else if(r<=5&&c>=9){cls+=" base-green";}
   else if(r>=9&&c<=5){cls+=" base-yellow";}
   else if(r>=9&&c>=9){cls+=" base-blue";}
-  if(r>=6&&r<=8&&c>=6&&c<=8){cls+=" center-home";if(r===7&&c===7)content="♥";else if(r===6&&c===6)cls+=" center-red";else if(r===6&&c===8)cls+=" center-green";else if(r===8&&c===6)cls+=" center-yellow";else if(r===8&&c===8)cls+=" center-blue";}
+  if(r>=6&&r<=8&&c>=6&&c<=8){cls+=" center-home";if(r===7&&c===7)content='<span class="center-heart">♥</span>';else if(r===6&&c===6)cls+=" center-red";else if(r===6&&c===8)cls+=" center-green";else if(r===8&&c===6)cls+=" center-yellow";else if(r===8&&c===8)cls+=" center-blue";}
   const yard=yardMap[key];
-  if(yard){const p=yard.p,tokenIndex=yard.i,pos=g.tokens[String(p)][tokenIndex];cls+=" yard-cell "+(p===0?"yard-red":"yard-blue");content=pos===-1?'<span class="yard-token '+(p===0?"red-token-bg":"blue-token-bg")+'">'+(tokenIndex+1)+'</span>':"";}
+  if(yard){const p=yard.p,tokenIndex=yard.i,pos=g.tokens[String(p)][tokenIndex];cls+=" yard-cell "+(p===0?"yard-red":"yard-blue");content=pos===-1?'<button class="yard-token '+(p===0?"red-token-bg":"blue-token-bg")+'" data-token-player="'+p+'" data-token="'+tokenIndex+'" aria-label="Move token '+(tokenIndex+1)+' out of yard" '+(me()!==p||g.dice!==6||g.winner||room.players.length<2?'disabled':'')+'>'+(tokenIndex+1)+'</button>':"";}
+  if((r<=5&&c<=5)||(r<=5&&c>=9)||(r>=9&&c<=5)||(r>=9&&c>=9)){const quad=(r<=5?(c<=5?"red":"green"):(c<=5?"yellow":"blue"));cls+=" base-"+quad;if((r===2||r===3)&&(c===2||c===3)||(r===2||r===3)&&(c===11||c===12)||(r===11||r===12)&&(c===2||c===3)||(r===11||r===12)&&(c===11||c===12))cls+=" base-home-dot";}
   out+='<div class="'+cls+'">'+content+'</div>';
  }
  return out+'</div>';
@@ -282,7 +289,7 @@ function wireGame(){
  document.querySelectorAll("[data-shape]").forEach(b=>b.onclick=()=>change(s=>{const g=s.whot,p=me(),shape=+b.dataset.shape;if(g.pendingShapePlayer!==p||g.pendingShapeIndex===null)return;playWhotCard(g,p,g.pendingShapeIndex,shape);}));
  const drawFromMarket=()=>change(s=>{const g=s.whot,p=me();if(g.turn!==p||g.winner||g.pendingShapePlayer!==null||room.players.length<2)return;if(g.pendingPenalty){const amount=g.pendingPenalty.amount;for(let n=0;n<amount;n++){const c=drawWhotCard(g);if(c)g.hands[p].push(c);}g.pendingPenalty=null;g.turn=1-p;g.message=room.players[p].name+" picked "+amount+" card(s) from the Market. Turn passes.";}else{const c=drawWhotCard(g);if(!c){g.message="No cards remain to draw. Restart the game.";return;}g.hands[p].push(c);g.turn=1-p;g.message=room.players[p].name+" picked a card from the Market. Turn passes.";}});const dr=$("drawCard");if(dr)dr.onclick=drawFromMarket;const pile=$("drawPile");if(pile)pile.onclick=drawFromMarket;
  const rw=$("resetWhot");if(rw)rw.onclick=()=>change(s=>{s.whot=newWhot();});
- const roll=$("rollDice");if(roll)roll.onclick=()=>change(s=>{const g=s.ludo,p=me();if(g.turn!==p||g.dice!==null||g.winner||room.players.length<2)return;g.dice=1+Math.floor(Math.random()*6);const legal=ludoLegalTokens(g,p);if(!legal.length){g.message=room.players[p].name+" rolled "+g.dice+" but has no legal move. Turn passes.";g.turn=1-p;g.dice=null;}else g.message=room.players[p].name+" rolled "+g.dice+". Choose a highlighted token below.";});
+ const roll=$("rollDice");if(roll)roll.onclick=()=>change(s=>{const g=s.ludo,p=me();if(g.turn!==p||g.dice!==null||g.winner||room.players.length<2)return;const rolled=1+Math.floor(Math.random()*6);g.dice=rolled;if(rolled===6){g.sixStreak=(g.sixStreak||0)+1;if(g.sixStreak>=3){g.message=room.players[p].name+" rolled three sixes in a row! Turn forfeited.";g.turn=1-p;g.dice=null;g.sixStreak=0;return;}}else g.sixStreak=0;const legal=ludoLegalTokens(g,p);if(!legal.length){g.message=room.players[p].name+" rolled "+rolled+" but has no legal move. Turn passes.";g.turn=1-p;g.dice=null;g.sixStreak=0;}else g.message=room.players[p].name+" rolled "+rolled+". Tap one of your movable tokens on the board or below.";});
  document.querySelectorAll("[data-token-player]").forEach(b=>b.onclick=()=>change(s=>{const g=s.ludo,p=me(),tokenPlayer=+b.dataset.tokenPlayer,token=+b.dataset.token;if(tokenPlayer!==p||g.turn!==p||g.winner||room.players.length<2)return;moveLudo(g,p,token);}));
  const rl=$("resetLudo");if(rl)rl.onclick=()=>change(s=>{s.ludo=newLudo();});
  document.querySelectorAll("[data-answer]").forEach(b=>b.onclick=()=>change(s=>{if(room.players.length<2)return;if(Array.isArray(s.quiz.answers))s.quiz.answers={};s.quiz.answers[me()]=+b.dataset.answer;}));
