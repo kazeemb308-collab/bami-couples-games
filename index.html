@@ -93,6 +93,31 @@
 .opponent-hand{display:flex;justify-content:flex-end;align-items:center;min-width:0;padding-left:12px}.card-back{width:38px;min-width:25px;height:55px;border:2px solid #f8e2b5;border-radius:6px;background:repeating-linear-gradient(45deg,#8d173d 0 4px,#b82d55 4px 8px);box-shadow:0 2px 4px #0019;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#ffe9a9}.opponent-hand .card-back{margin-left:-17px}.card-back i{font-style:normal;font-family:Georgia,serif;font-size:20px;font-weight:900;border:1px solid #ffe9a9;border-radius:50%;width:22px;height:22px;display:grid;place-items:center}.card-back small{font-size:4px;letter-spacing:.5px;margin-top:3px}.whot-arena{display:flex;align-items:center;justify-content:center;gap:clamp(18px,7vw,64px);padding:20px 0 12px}.whot-pile{display:flex;flex-direction:column;align-items:center;gap:7px}.whot-pile>small,.whot-pile>b{font-size:9px;letter-spacing:1.5px;font-weight:900;color:#d6f1e3}.market-card{width:76px;min-width:76px;height:108px;min-height:108px;transform:rotate(-5deg)}.discard-pile .top-playing-card{width:82px;min-width:82px;height:112px;min-height:112px;margin:0;transform:rotate(3deg)}.whot-turn-strip{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;border-radius:9px;padding:10px 12px;background:#003d2b;color:#c8e9db;font-size:10px;font-weight:900;letter-spacing:.7px}.whot-turn-strip.your-turn{background:#f9d56b;color:#432a0b}.whot-message{text-align:center;font-size:13px;font-weight:650;line-height:1.5;min-height:20px}.whot-hand-title{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin:18px 0 8px}.whot-hand-title b{font-size:12px;letter-spacing:1.5px}.whot-hand-title small{font-size:10px;color:#d4eddf;text-align:right}.whot-hand{gap:7px;padding:8px 2px 14px;align-items:flex-end}.naija-whot-table .whot-hand .playingcard{width:clamp(54px,15vw,76px);min-width:0;height:clamp(82px,22vw,112px);min-height:0;flex:0 1 76px;padding:6px 4px;border-radius:9px;box-shadow:0 4px 8px #0019}.naija-whot-table .whot-hand .playingcard>span:first-child{font-size:16px}.naija-whot-table .whot-hand .playingcard .shape{font-size:26px}.naija-whot-table .whot-hand .playingcard>span:last-child{font-size:7px}.naija-whot-table .shape-picker{background:#064531;border-color:#8ed9b5}.naija-whot-table .shape-choice{background:#f9f0dc;color:#222}.naija-whot-table .shape-choice span{font-size:25px}.naija-whot-table .center-actions button{box-shadow:0 3px 0 #0003}
 @media(max-width:420px){.naija-whot-table{padding:10px;border-width:3px;border-radius:17px}.opponent-hand .card-back{margin-left:-19px}.card-back{width:32px;height:48px}.whot-arena{gap:28px;padding:16px 0 10px}.whot-hand-title{align-items:flex-start;flex-direction:column}.whot-hand-title small{text-align:left}}
 
+
+/* High-contrast Nigerian WHOT card faces */
+.naija-whot-table .playingcard{position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;background:linear-gradient(145deg,#fffef9,#f4ecd9);color:#202020;border:2px solid #f7e6c3;border-radius:11px;box-shadow:0 5px 0 #9e7847,0 8px 14px #0018;font-family:Arial,sans-serif}
+.naija-whot-table .playingcard:before{content:"";position:absolute;inset:5px;border:1px solid #d8c7a5;border-radius:7px;pointer-events:none}
+.naija-whot-table .playingcard .card-corner{position:absolute;z-index:1;font-family:Arial,sans-serif;font-size:15px!important;font-weight:1000;line-height:1;color:currentColor}
+.naija-whot-table .playingcard .card-corner.top{top:9px;left:9px;align-self:auto}
+.naija-whot-table .playingcard .card-corner.bottom{right:9px;bottom:9px;align-self:auto;transform:rotate(180deg)}
+.naija-whot-table .playingcard .shape{display:flex;align-items:center;justify-content:center;font-family:Arial,sans-serif;font-size:clamp(30px,8vw,43px);font-weight:1000;line-height:1;min-height:40px}
+.naija-whot-table .playingcard .card-caption{position:absolute;bottom:8px;left:0;right:0;align-self:auto;text-align:center;font-size:7px!important;font-weight:1000;letter-spacing:1px;color:#4d463b}
+.naija-whot-table .playingcard .card-corner.bottom{bottom:8px}
+.naija-whot-table .suit-0{color:#0875d1!important}.naija-whot-table .suit-1{color:#df263e!important}.naija-whot-table .suit-2{color:#181818!important}.naija-whot-table .suit-3{color:#15804b!important}.naija-whot-table .suit-4{color:#d69a00!important}
+.naija-whot-table .playingcard.whot-card{background:repeating-linear-gradient(135deg,#fff2bd 0 7px,#ffe39a 7px 14px)!important;color:#9a4c08!important;border:3px solid #d28a24!important;box-shadow:0 5px 0 #8d5418,0 8px 14px #0018}
+.naija-whot-table .playingcard.whot-card:before{border:2px dashed #b87319}
+.naija-whot-table .playingcard.whot-card .shape{font-size:39px;color:#a6540b}
+.naija-whot-table .playingcard.whot-card .card-caption{font-size:10px!important;letter-spacing:1.5px;color:#8e4308}
+.naija-whot-table .top-playing-card .shape{font-size:38px}.naija-whot-table .top-playing-card .card-caption{font-size:8px!important}
+.naija-whot-table .whot-hand .playingcard{min-height:104px;height:clamp(100px,27vw,128px);max-width:82px;flex:1 1 65px;padding:0}
+.naija-whot-table .whot-hand .playingcard .shape{font-size:clamp(30px,8vw,42px)}
+.naija-whot-table .whot-hand .playingcard .card-corner{font-size:14px!important}
+.naija-whot-table .market-card{background:repeating-linear-gradient(45deg,#811638 0 5px,#a51e47 5px 10px);color:#ffe6aa;border:3px solid #f4d69a;box-shadow:0 5px 0 #422018,0 8px 14px #0018}
+.naija-whot-table .market-card:before{border:2px solid #ffe6aa;inset:5px}
+.naija-whot-table .market-card i{width:43px;height:43px;border:2px solid #ffe6aa;border-radius:50%;font-size:28px;font-style:normal;font-family:Georgia,serif;font-weight:1000;display:grid;place-items:center;box-shadow:0 0 0 3px #ffe6aa55}
+.naija-whot-table .market-card small{font-size:7px;letter-spacing:1.5px}
+.naija-whot-table .playingcard:disabled{opacity:.72;filter:saturate(.7)}
+
 </style>
 </head><body>
 <header><div class="brand">Bami <span>&</span> Oluwatosin <span>♥</span></div><div class="status" id="connectionStatus">Connecting…<br>Private couple room</div></header>
@@ -121,4 +146,4 @@ window.addEventListener("unhandledrejection", function (event) {
   message.textContent = "Startup failed: " + reason;
 });
 </script>
-<script type="module" src="./app.js?v=20261016naija4"></script></body></html>
+<script type="module" src="./app.js?v=20261016naija5"></script></body></html>
