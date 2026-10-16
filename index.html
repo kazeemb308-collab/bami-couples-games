@@ -565,6 +565,28 @@ body:has(#gameArea .ludo-wrap) main{width:100%;max-width:none;padding:0!importan
  #gameArea:has(.ludo-wrap) .ludo-move-hint{outline:3px solid #ffe16a!important;outline-offset:2px}
 }
 
+
+/* Separate WHOT/Ludo scoreboards and clear turn banners */
+.game-score-strip{
+ display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:8px;
+ margin:8px auto 12px;padding:9px 12px;border:1px solid #ead9e2;border-radius:13px;
+ background:linear-gradient(135deg,#fff8fc,#fff);color:#493443;font-size:12px;
+}
+.game-score-strip>span{width:100%;text-align:center;font-size:10px;font-weight:900;letter-spacing:1.5px;color:#b34d7c}
+.game-score-strip b{display:inline-flex;align-items:center;gap:6px;max-width:42%;overflow-wrap:anywhere}
+.game-score-strip strong{display:inline-grid;place-items:center;min-width:25px;height:25px;padding:0 5px;border-radius:8px;background:#ffe2ef;color:#9f245e;font-size:15px}
+.game-score-strip i{font-style:normal;color:#b9a9b2}
+.ludo-game-status{
+ width:100%;margin:0 auto 8px;padding:12px 10px;border-radius:12px;text-align:center;
+ font-weight:1000;letter-spacing:1.8px;font-size:clamp(14px,3.5vw,19px);
+ box-shadow:0 3px 0 #00000012;
+}
+.ludo-game-status.your-turn,.whot-turn-strip.your-turn{background:linear-gradient(135deg,#d8ffe6,#a7f0c4);color:#075e35;border:1px solid #66cf94}
+.ludo-game-status.not-your-turn,.whot-turn-strip.not-your-turn{background:linear-gradient(135deg,#f0edf2,#ddd7e2);color:#615768;border:1px solid #d2c8d8}
+.ludo-game-status.game-over,.whot-turn-strip.game-over{background:linear-gradient(135deg,#ffe5a8,#ffc75b);color:#75440b;border:1px solid #e6a93c}
+.game-score-strip.ludo-score-strip{margin-top:0}
+@media(max-width:420px){.game-score-strip{gap:5px;padding:8px 5px;font-size:11px}.game-score-strip b{gap:4px}}
+
 </style>
 </head><body>
 <header><div class="brand">Bami <span>&</span> Oluwatosin <span>♥</span></div><div class="status" id="connectionStatus">Connecting…<br>Private couple room</div></header>
@@ -593,4 +615,4 @@ window.addEventListener("unhandledrejection", function (event) {
   message.textContent = "Startup failed: " + reason;
 });
 </script>
-<script type="module" src="./app.js?v=20261016naija-ludo-rules1"></script></body></html>
+<script type="module" src="./app.js?v=20261016turn-scores-rematch1"></script></body></html>
