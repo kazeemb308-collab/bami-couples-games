@@ -81,7 +81,7 @@ async function joinRoom(){
  catch(e){say(e.message);}
 }
 function enterRoom(c){
- roomId=c;$("roomSection").classList.remove("hidden");$("roomCodeDisplay").textContent=c;if(unsubscribe)unsubscribe();
+ roomId=c;$("setupPanel").classList.add("hidden");$("roomSection").classList.remove("hidden");$("roomCodeDisplay").textContent=c;if(unsubscribe)unsubscribe();
  unsubscribe=onSnapshot(doc(db,"coupleRooms",c),snap=>{if(!snap.exists())return say("Room no longer exists.");room=snap.data();activeGame=room.activeGame||"whot";renderRoom();renderGame();},e=>say("Live sync error: "+e.message));
  $("roomSection").scrollIntoView({behavior:"smooth",block:"start"});
 }
@@ -244,5 +244,5 @@ function wireGame(){
 $("createRoom").onclick=createRoom;$("joinRoom").onclick=joinRoom;
 document.querySelectorAll(".game").forEach(b=>b.onclick=async()=>{if(!roomId||!db)return say("Create or join a room before choosing a game.");try{await runTransaction(db,async tx=>{const ref=doc(db,"coupleRooms",roomId),snap=await tx.get(ref);if(!snap.exists())throw Error("Room not found.");tx.update(ref,{activeGame:b.dataset.game});});document.querySelector(".games").classList.add("hidden");$("gameArea").classList.remove("hidden");$("gameArea").scrollIntoView({behavior:"smooth",block:"start"});}catch(e){say("Could not switch game: "+e.message);}});
 $("copyInvite").onclick=async()=>{try{await navigator.clipboard.writeText(roomId);say("Room code copied: "+roomId);}catch(e){say("Share this room code: "+roomId);}};
-$("leaveRoom").onclick=()=>{if(unsubscribe)unsubscribe();unsubscribe=null;roomId=null;room=null;playerId=null;$("roomSection").classList.add("hidden");$("connectionStatus").innerHTML="Firebase ready<br>Not in a room yet";window.scrollTo({top:0,behavior:"smooth"});};
+$("leaveRoom").onclick=()=>{if(unsubscribe)unsubscribe();unsubscribe=null;roomId=null;room=null;playerId=null;$("roomSection").classList.add("hidden");$("setupPanel").classList.remove("hidden");$("connectionStatus").innerHTML="Firebase ready<br>Not in a room yet";window.scrollTo({top:0,behavior:"smooth"});};
 init();
