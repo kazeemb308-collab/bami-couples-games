@@ -622,6 +622,15 @@ body:has(#gameArea .ludo-wrap) main{width:100%;max-width:none;padding:0!importan
 .ludo-seed-option.blue-token-bg{background:#2366c9}
 .ludo-seed-cancel{width:100%;margin-top:12px}
 
+
+#gameArea:has(.ludo-wrap) .ludo-board.player-view-0 .ludo-cell>.center-dice-button,
+#gameArea:has(.ludo-wrap) .ludo-board.player-view-0 .ludo-cell>.center-dice-select{transform:rotate(180deg)}
+#gameArea:has(.ludo-wrap) .ludo-board.player-view-0 .ludo-move-hint{animation-name:ludo-eligible-pulse-flipped}
+@keyframes ludo-eligible-pulse-flipped{
+  from{filter:brightness(1.05);transform:scale(1) rotate(176deg)}
+  to{filter:brightness(1.65);transform:scale(1.42) rotate(184deg)}
+}
+
 </style>
 </head><body>
 <header><div class="brand">Bami <span>&</span> Oluwatosin <span>♥</span></div><div class="status" id="connectionStatus">Connecting…<br>Private couple room</div></header>
