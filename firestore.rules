@@ -1,0 +1,10 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /coupleRooms/{roomId} {
+      // Starter rules only: anyone who knows a room code can read/write it.
+      // Add Firebase Authentication and strict membership validation before public launch.
+      allow read, write: if roomId.matches('^[A-Z0-9]{6}$');
+    }
+  }
+}
