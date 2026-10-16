@@ -1,7 +1,4 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
-import { getFirestore, doc, setDoc, onSnapshot, runTransaction, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { firebaseConfig } from "./firebase-config.js";
+let initializeApp, getAuth, signInAnonymously, getFirestore, doc, setDoc, onSnapshot, runTransaction, serverTimestamp, firebaseConfig;
 
 const $ = id => document.getElementById(id);
 let db = null, auth = null, roomId = null, playerId = null, room = null, unsubscribe = null, activeGame = "whot";
@@ -23,7 +20,44 @@ function deck(){const a=[];for(let s=0;s<5;s++)for(let n=1;n<=14;n++)a.push({s,n
 function newWhot(){const d=deck();return {deck:d.slice(10),hands:[d.slice(0,5),d.slice(5,10)],top:d[10],turn:0,winner:"",message:"Match the shape or number."};}
 function initialState(){return {ttt:{cells:Array(9).fill(""),turn:"X",winner:"",moves:0},whot:newWhot(),ludo:{positions:[0,0],turn:0,dice:null,winner:"",message:"Roll the dice and race to 20."},quiz:{index:0,answers:[],scores:[0,0]},truth:{turn:0,prompt:"Choose Truth or Dare to begin."}};}
 function me(){return room?room.players.findIndex(p=>p.id===playerId):-1;}
-async function init(){if(!configOK()){$("connectionStatus").innerHTML="Setup needed<br>Firebase not connected";return;}try{const app=initializeApp(firebaseConfig);auth=getAuth(app);db=getFirestore(app);await signInAnonymously(auth);$("connectionStatus").innerHTML="Firebase ready<br>Signed in anonymously";$("setupMessage").textContent="Firebase connected. Create a room and share its code with your partner.";}catch(e){say("Firebase setup error: "+e.message);$("connectionStatus").innerHTML="Connection error<br>Check Firebase settings";}}
+async function init(){
+  $("connectionStatus").innerHTML="Loading Firebase modules…<br>Please wait";
+  $("setupMessage").textContent="Loading the connection to Firebase…";
+  try {
+    const [appModule, authModule, firestoreModule, configModule] = await Promise.all([
+      import("https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js"),
+      import("https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js"),
+      import("https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js"),
+      import("./firebase-config.js")
+    ]);
+    initializeApp = appModule.initializeApp;
+    getAuth = authModule.getAuth;
+    signInAnonymously = authModule.signInAnonymously;
+    getFirestore = firestoreModule.getFirestore;
+    doc = firestoreModule.doc;
+    setDoc = firestoreModule.setDoc;
+    onSnapshot = firestoreModule.onSnapshot;
+    runTransaction = firestoreModule.runTransaction;
+    serverTimestamp = firestoreModule.serverTimestamp;
+    firebaseConfig = configModule.firebaseConfig;
+    if(!configOK()){
+      $("connectionStatus").innerHTML="Setup needed<br>Firebase not connected";
+      $("setupMessage").textContent="Firebase settings are missing or incomplete in firebase-config.js.";
+      return;
+    }
+    const app=initializeApp(firebaseConfig);
+    auth=getAuth(app);
+    db=getFirestore(app);
+    await signInAnonymously(auth);
+    $("connectionStatus").innerHTML="Firebase ready<br>Signed in anonymously";
+    $("setupMessage").textContent="Firebase connected. Create a room and share its code with your partner.";
+  } catch(e) {
+    const message = e && e.message ? e.message : String(e);
+    say("Firebase startup error: " + message);
+    $("connectionStatus").innerHTML="Connection error<br>See message below";
+    $("setupMessage").textContent="Could not start Firebase: " + message;
+  }
+}
 async function createRoom(){if(!db||!auth?.currentUser)return say("Firebase is still connecting. Please wait a moment and try again.");$("createRoom").disabled=true;try{playerId=crypto.randomUUID();roomId=roomCode();await setDoc(doc(db,"coupleRooms",roomId),{roomId,players:[{id:playerId,name:playerName(),joinedAt:Date.now()}],state:initialState(),createdAt:serverTimestamp()});enterRoom(roomId);}catch(e){say("Could not create room: "+e.message);}finally{$("createRoom").disabled=false;}}
 async function joinRoom(){if(!db||!auth?.currentUser)return say("Firebase is still connecting. Please wait a moment and try again.");const c=$("roomInput").value.trim().toUpperCase();if(!/^[A-Z0-9]{6}$/.test(c))return say("Enter the 6-character room code.");try{playerId=crypto.randomUUID();await runTransaction(db,async tx=>{const ref=doc(db,"coupleRooms",c),snap=await tx.get(ref);if(!snap.exists())throw Error("Room not found. Check the code.");const data=snap.data();if(data.players.length>=2)throw Error("This room already has two players.");if(data.players.some(p=>p.name.toLowerCase()===playerName().toLowerCase()))throw Error("Choose a different player name.");tx.update(ref,{players:data.players.concat([{id:playerId,name:playerName(),joinedAt:Date.now()}])});});enterRoom(c);}catch(e){say(e.message);}}
 function enterRoom(c){roomId=c;$("roomSection").classList.remove("hidden");$("roomCodeDisplay").textContent=c;if(unsubscribe)unsubscribe();unsubscribe=onSnapshot(doc(db,"coupleRooms",c),snap=>{if(!snap.exists())return say("Room no longer exists.");room=snap.data();renderRoom();renderGame();},e=>say("Live sync error: "+e.message));$("roomSection").scrollIntoView({behavior:"smooth",block:"start"});}
