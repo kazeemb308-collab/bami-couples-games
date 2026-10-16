@@ -431,6 +431,104 @@ body:has(#gameArea .ludo-wrap) main{width:100%;max-width:none;padding:0!importan
 #gameArea:has(.ludo-wrap) .center-dice-select .die-choice.used{opacity:.28;filter:grayscale(1);box-shadow:none}
 #gameArea:has(.ludo-wrap) .center-dice-select small{font-size:clamp(4px,.8vw,7px);font-weight:1000;line-height:1.1;color:#ffdf7b;letter-spacing:.2px;text-align:center}
 
+
+
+/* Premium Naija Ludo board: crisp printed squares, inset yards and polished counters */
+#gameArea:has(.ludo-wrap) .ludo-board-frame{
+  background:linear-gradient(135deg,#d7c49d,#f4e8c9 38%,#b99a65);
+  border:1px solid #8b6938;
+  padding:clamp(4px,1vw,8px);
+  border-radius:8px;
+  box-shadow:0 2px 0 #604323,0 12px 26px #0006,inset 0 0 0 1px #fff9;
+}
+#gameArea:has(.ludo-wrap) .ludo-board{
+  background:#e9e5d9;
+  border:2px solid #fffdf5;
+  box-shadow:0 0 0 1px #a69b85, inset 0 0 0 1px #fff;
+}
+#gameArea:has(.ludo-wrap) .ludo-cell{
+  position:relative;
+  overflow:hidden;
+  color:#343b46;
+  box-shadow:inset 0 0 0 1px #d6d4cc;
+}
+#gameArea:has(.ludo-wrap) .ludo-cell.track-cell{
+  background:linear-gradient(145deg,#fffefa,#f2f0e9);
+  box-shadow:inset 0 0 0 1px #d3d0c6, inset 0 1px 0 #fff;
+}
+#gameArea:has(.ludo-wrap) .ludo-cell.safe-cell{
+  background:linear-gradient(145deg,#fff2bc,#f1d77d)!important;
+  color:#9c6a12;
+  box-shadow:inset 0 0 0 1px #d2b45c,inset 0 1px 0 #fff8;
+}
+#gameArea:has(.ludo-wrap) .safe-star{font-size:clamp(7px,1.5vw,15px);filter:drop-shadow(0 1px 0 #fff9)}
+#gameArea:has(.ludo-wrap) .ludo-cell.red-start{background:linear-gradient(145deg,#ef5972,#d9274d)!important}
+#gameArea:has(.ludo-wrap) .ludo-cell.green-start{background:linear-gradient(145deg,#39bf7b,#16884e)!important}
+#gameArea:has(.ludo-wrap) .ludo-cell.yellow-start{background:linear-gradient(145deg,#ffe071,#e9b921)!important}
+#gameArea:has(.ludo-wrap) .ludo-cell.blue-start{background:linear-gradient(145deg,#58a0ff,#2366c9)!important}
+#gameArea:has(.ludo-wrap) .ludo-cell.home-lane{
+  box-shadow:inset 0 0 0 1px #ffffffd9,inset 0 1px 0 #fff9;
+}
+#gameArea:has(.ludo-wrap) .ludo-cell.red-lane{background:linear-gradient(145deg,#f8b2bf,#e9879c)!important}
+#gameArea:has(.ludo-wrap) .ludo-cell.green-lane{background:linear-gradient(145deg,#a5e8c1,#69c993)!important}
+#gameArea:has(.ludo-wrap) .ludo-cell.yellow-lane{background:linear-gradient(145deg,#ffeb9e,#f2d05d)!important}
+#gameArea:has(.ludo-wrap) .ludo-cell.blue-lane{background:linear-gradient(145deg,#b4d5ff,#79aaf0)!important}
+#gameArea:has(.ludo-wrap) .ludo-cell.base-red{background:linear-gradient(135deg,#e74462,#c91f45)!important}
+#gameArea:has(.ludo-wrap) .ludo-cell.base-green{background:linear-gradient(135deg,#35b975,#11814a)!important}
+#gameArea:has(.ludo-wrap) .ludo-cell.base-yellow{background:linear-gradient(135deg,#ffdc5e,#e9b522)!important}
+#gameArea:has(.ludo-wrap) .ludo-cell.base-blue{background:linear-gradient(135deg,#4896f5,#1c5fc3)!important}
+#gameArea:has(.ludo-wrap) .ludo-cell.base-home{
+  background:#fffdf7!important;
+  box-shadow:inset 0 0 0 1px #ded9cc,inset 0 2px 4px #0000000b;
+}
+#gameArea:has(.ludo-wrap) .ludo-cell.base-home-dot{
+  background:radial-gradient(circle at 35% 30%,#fff 0 48%,#f1eee6 72%,#d5d0c3 100%)!important;
+  box-shadow:inset 0 0 0 1px #c9c3b5,0 1px 1px #0002;
+}
+#gameArea:has(.ludo-wrap) .ludo-cell.yard-cell{
+  background:transparent!important;
+  box-shadow:none;
+}
+#gameArea:has(.ludo-wrap) .yard-token,
+#gameArea:has(.ludo-wrap) .board-token{
+  box-sizing:border-box;
+  border:2px solid #fff;
+  border-radius:50%;
+  font-weight:900;
+  color:#fff;
+  box-shadow:inset 0 2px 2px #ffffff75,inset 0 -3px 4px #0003,0 2px 3px #0005;
+  text-shadow:0 1px 2px #0006;
+  transform:translateZ(0);
+  touch-action:manipulation;
+}
+#gameArea:has(.ludo-wrap) .yard-token{width:78%;height:78%;font-size:clamp(6px,1.4vw,12px)}
+#gameArea:has(.ludo-wrap) .board-token{width:86%;height:86%;min-width:0;min-height:0;font-size:clamp(6px,1.3vw,11px)}
+#gameArea:has(.ludo-wrap) .red-token-bg{background:radial-gradient(circle at 30% 24%,#ff9aaa,#e52c51 55%,#9f1532)!important}
+#gameArea:has(.ludo-wrap) .green-token-bg{background:radial-gradient(circle at 30% 24%,#a4f4c4,#24a765 55%,#086337)!important}
+#gameArea:has(.ludo-wrap) .yellow-token-bg{background:radial-gradient(circle at 30% 24%,#fff0a2,#e9b923 55%,#9d7410)!important;color:#fff!important}
+#gameArea:has(.ludo-wrap) .blue-token-bg{background:radial-gradient(circle at 30% 24%,#a5d0ff,#2877e5 55%,#16458e)!important}
+#gameArea:has(.ludo-wrap) .yard-token:disabled,
+#gameArea:has(.ludo-wrap) .board-token:disabled{opacity:1}
+#gameArea:has(.ludo-wrap) .yard-token:not(:disabled),
+#gameArea:has(.ludo-wrap) .board-token:not(:disabled){cursor:pointer;outline:1px solid #fff8;outline-offset:1px}
+#gameArea:has(.ludo-wrap) .yard-token:not(:disabled):active,
+#gameArea:has(.ludo-wrap) .board-token:not(:disabled):active{transform:scale(.9)}
+#gameArea:has(.ludo-wrap) .ludo-cell.center-home{background:#fffaf0!important;box-shadow:inset 0 0 0 1px #d9cdb6}
+#gameArea:has(.ludo-wrap) .ludo-cell.center-red{background:linear-gradient(135deg,#f35a73,#c91f45)!important}
+#gameArea:has(.ludo-wrap) .ludo-cell.center-green{background:linear-gradient(135deg,#45c884,#13834b)!important}
+#gameArea:has(.ludo-wrap) .ludo-cell.center-yellow{background:linear-gradient(135deg,#ffe276,#e5b31e)!important}
+#gameArea:has(.ludo-wrap) .ludo-cell.center-blue{background:linear-gradient(135deg,#5ba3ff,#1d62c5)!important}
+#gameArea:has(.ludo-wrap) .center-dice-button{
+  border:2px solid #e5c46d;
+  background:linear-gradient(145deg,#fffdf6,#e7dfcd);
+  box-shadow:inset 0 0 0 1px #fff,0 2px 0 #9c7837,0 4px 8px #0003;
+}
+#gameArea:has(.ludo-wrap) .center-dice-select .die-choice{border-color:#d6c8a7}
+@media(max-width:600px){
+  #gameArea:has(.ludo-wrap) .ludo-board-frame{padding:4px}
+  #gameArea:has(.ludo-wrap) .ludo-board{width:min(100%,calc(100vw - 16px))}
+}
+
 </style>
 </head><body>
 <header><div class="brand">Bami <span>&</span> Oluwatosin <span>♥</span></div><div class="status" id="connectionStatus">Connecting…<br>Private couple room</div></header>
@@ -459,4 +557,4 @@ window.addEventListener("unhandledrejection", function (event) {
   message.textContent = "Startup failed: " + reason;
 });
 </script>
-<script type="module" src="./app.js?v=20261016naija-ludo-dice"></script></body></html>
+<script type="module" src="./app.js?v=20261016naija-ludo-premium"></script></body></html>
