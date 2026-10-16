@@ -122,6 +122,37 @@
 .naija-whot-table .playingcard .card-caption{bottom:27px!important}
 .naija-whot-table .top-playing-card .card-caption{bottom:29px!important}
 
+/* WHOT and Ludo share the same full-screen game navigation */
+body:has(#gameArea .naija-whot-table),body:has(#gameArea .ludo-wrap){overflow:hidden}
+#gameArea:has(.naija-whot-table),#gameArea:has(.ludo-wrap){position:fixed;inset:0;z-index:1000;width:100%;height:100vh;height:100dvh;max-width:none;margin:0;padding:0;border:0;border-radius:0;overflow-x:hidden;overflow-y:auto;background:#063829;box-shadow:none;overscroll-behavior:contain}
+#gameArea:has(.ludo-wrap){background:#091323;color:#fff}
+#gameArea:has(.ludo-wrap) .ludo-wrap{width:100%;max-width:980px;margin:0 auto;padding:8px clamp(8px,2vw,20px) max(12px,env(safe-area-inset-bottom))}
+#gameArea:has(.ludo-wrap) .overall-scoreboard{margin:5px auto 8px;padding:6px 8px;background:#fff4d9;border-color:#f1d8a0;box-shadow:none}
+#gameArea:has(.ludo-wrap) .ludo-head{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:10px;padding:8px;border-radius:13px}
+#gameArea:has(.ludo-wrap) .ludo-board-frame{margin:8px auto;padding:5px;border-radius:12px}
+#gameArea:has(.ludo-wrap) .ludo-board-title{padding:0 3px 5px}
+#gameArea:has(.ludo-wrap) .ludo-board{width:min(100%,min(66dvh,88vw),620px)}
+#gameArea:has(.ludo-wrap) .ludo-player{padding:7px 9px;margin-top:6px;border-radius:11px}
+#gameArea:has(.ludo-wrap) .ludo-player h3{font-size:12px;margin:0 0 5px}
+#gameArea:has(.ludo-wrap) .token-pick{min-height:36px;padding:4px 2px}
+#gameArea:has(.ludo-wrap) .token-pick small{font-size:9px}
+#gameArea:has(.ludo-wrap) .ludo-rules{display:none}
+@media(max-width:600px){
+ #gameArea:has(.ludo-wrap) .ludo-wrap{padding:6px 6px max(10px,env(safe-area-inset-bottom))}
+ #gameArea:has(.ludo-wrap) .ludo-head{grid-template-columns:auto minmax(0,1fr) auto;gap:6px;padding:7px}
+ #gameArea:has(.ludo-wrap) .dice-card{min-width:48px;padding:4px}
+ #gameArea:has(.ludo-wrap) .ludo-dice{min-width:34px;min-height:36px;font-size:28px}
+ #gameArea:has(.ludo-wrap) .ludo-message{min-width:0;font-size:10px;line-height:1.3}
+ #gameArea:has(.ludo-wrap) #rollDice{padding:8px 9px;font-size:11px;white-space:nowrap}
+ #gameArea:has(.ludo-wrap) .ludo-board{width:min(100%,88vw,60dvh)}
+ #gameArea:has(.ludo-wrap) .ludo-board-frame{margin:7px auto 5px;padding:4px}
+ #gameArea:has(.ludo-wrap) .ludo-player{padding:6px 7px;margin-top:5px}
+ #gameArea:has(.ludo-wrap) .ludo-player h3{font-size:10px}
+ #gameArea:has(.ludo-wrap) .token-pick{min-height:32px}
+ #gameArea:has(.ludo-wrap) .token-mini{font-size:10px}
+}
+@media(min-width:700px){#gameArea:has(.ludo-wrap) .ludo-board{width:min(100%,620px)}}
+
 /* WHOT full-screen table and clearer playable-card feedback */
 body:has(#gameArea .naija-whot-table){overflow:hidden}
 #gameArea:has(.naija-whot-table){position:fixed;inset:0;z-index:1000;width:100%;height:100vh;height:100dvh;max-width:none;margin:0;padding:0;border:0;border-radius:0;overflow-x:hidden;overflow-y:auto;background:#063829;box-shadow:none;overscroll-behavior:contain}
@@ -274,4 +305,4 @@ window.addEventListener("unhandledrejection", function (event) {
   message.textContent = "Startup failed: " + reason;
 });
 </script>
-<script type="module" src="./app.js?v=20261016naija-ludo"></script></body></html>
+<script type="module" src="./app.js?v=20261016ludo-fullscreen-nav"></script></body></html>
