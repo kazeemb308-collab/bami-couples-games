@@ -34,7 +34,7 @@ const LUDO_PATH = (() => {
  return p;
 })();
 const LUDO_SAFE = new Set([0,8,13,21,26,34,39,47]);
-const LUDO_START = [0,13,26,39];
+const LUDO_START = [0,13,39,26]; // Red, green, yellow, blue aligned with their home lanes
 const LUDO_COLOURS = [{name:"RED",css:"red",owner:0},{name:"GREEN",css:"green",owner:0},{name:"YELLOW",css:"yellow",owner:1},{name:"BLUE",css:"blue",owner:1}];
 function say(t){const e=$("globalMessage");e.textContent=t;e.classList.remove("hidden");}
 function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
