@@ -111,7 +111,6 @@ function whotCanPlay(c,g){return !!c;}
 function playWhotCard(g,p,i,chosenShape){
  const hand=g.hands[p]||[],c=hand[i];if(!c)return false;
  if(c.s===5&&chosenShape===undefined){g.pendingShapeIndex=i;g.pendingShapePlayer=p;g.message="Choose the shape you want to call with WHOT 20.";return false;}
- if(g.pendingPenalty&&c.n!==g.pendingPenalty.type){g.message='Block the Pick '+g.pendingPenalty.type+' with the same card, or draw '+g.pendingPenalty.amount+' cards.';return false;}
  if(c.s===5&&(!Number.isInteger(chosenShape)||chosenShape<0||chosenShape>4))return false;
  const oldPenalty=g.pendingPenalty?{...g.pendingPenalty}:null;
  hand.splice(i,1);g.discard.push(g.top);g.top=c;g.calledShape=c.s===5?chosenShape:null;g.pendingShapeIndex=null;g.pendingShapePlayer=null;g.pendingPenalty=null;
