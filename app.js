@@ -246,10 +246,7 @@ function ludoDieFace(n){return n===null||n===undefined?"🎲":(["","⚀","⚁","
 function renderLudo(g){
  ensureLudoState(g);
  const p=me(),dice=g.dice,ownedColours=p===0?[0,1]:[2,3];
- const outcome=Array.isArray(g.rolls)?g.rolls:(Array.isArray(g.lastRoll)?g.lastRoll:null);let h='<div class="ludo-wrap"><div class="ludo-head ludo-head-center"><div class="ludo-message"><b>'+(outcome?'🎲 Dice outcome: '+outcome[0]+' + '+outcome[1]:'🎲')+'</b></div><div class="ludo-match-badge">'+(room.players.length<2?'WAITING FOR PLAYER':'🔴 RED + 🟢 GREEN VS 🟡 YELLOW + 🔵 BLUE')+'</div></div>';
- h+='<div class="ludo-board-frame"><div class="ludo-board-title"><b>NAIJA LUDO</b><span>2 DICE · 16 SEEDS</span></div>'+renderLudoBoard(g)+'</div>';
- for(const colour of ownedColours){const col=LUDO_COLOURS[colour],tokens=g.tokens[String(colour)];h+='<div class="ludo-player ludo-player-'+col.css+'"><h3><span class="player-colour-dot '+col.css+'-dot"></span>'+myName(p)+' <span class="muted">· '+tokens.filter(v=>v===57).length+'/4 '+col.name+' HOME</span></h3><div class="token-tray">'+tokens.map((v,i)=>'<button class="token-pick '+col.css+'-token" data-token-owner="'+p+'" data-token-colour="'+colour+'" data-token="'+i+'" '+(g.turn!==p||g.dice===null||!ludoCanLand(g,colour,v,g.dice)||g.winner||room.players.length<2?'disabled':'')+'><span class="token-mini">● '+(i+1)+'</span><small>'+ludoPosLabel(v)+'</small></button>').join("")+'</div></div>';}
- h+='<div class="ludo-rules"><b>HOW TO WIN</b><span>Tap the two dice in the centre · Move by the total of both dice · Roll a total of 6 to leave the yard · Capture single opponent seeds · Safe stars protect seeds · Exact roll to finish · Each player controls two colours and 8 seeds</span></div></div>';return h;
+ let h='<div class="ludo-wrap">';
 }
 function ludoPosLabel(v){if(v===-1)return "Yard";if(v===57)return "Home";if(v>=52)return "Home lane "+(v-51);return "Track "+(v+1);}
 function renderLudoBoard(g){
