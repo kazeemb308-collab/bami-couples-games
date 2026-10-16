@@ -43,10 +43,13 @@ function configOK(){return firebaseConfig.apiKey&&!firebaseConfig.apiKey.include
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
 function makeWhotDeck(){const a=[];whotSuitNumbers.forEach((numbers,s)=>numbers.forEach(n=>a.push({s,n})));for(let n=0;n<5;n++)a.push({s:5,n:20});return shuffle(a);}
 function newWhot(){
+ return {deck:[],discard:[],hands:{"0":[],"1":[]},top:null,calledShape:null,turn:0,winner:"",pendingShapeIndex:null,pendingShapePlayer:null,pendingPenalty:null,dealt:false,readyPlayers:[],message:"Both players tap the deck to deal your cards."};
+}
+function dealWhot(g){
  const d=makeWhotDeck(),hands={"0":d.slice(0,6),"1":d.slice(6,12)};
  let rest=d.slice(12),topIndex=rest.findIndex(c=>c.s!==5);if(topIndex<0)topIndex=0;
- const top=rest.splice(topIndex,1)[0];
- return {deck:rest,discard:[],hands,top,calledShape:null,turn:0,winner:"",pendingShapeIndex:null,pendingShapePlayer:null,pendingPenalty:null,message:"Naija WHOT: match shape or number. 1 Hold On · 2 Pick Two · 5 Pick Three · 8 Suspension · 14 General Market · WHOT 20 calls a shape."};
+ const top=rest.splice(topIndex,1)[0],turn=Math.floor(Math.random()*2);
+ Object.assign(g,{deck:rest,discard:[],hands,top,calledShape:null,turn,winner:"",pendingShapeIndex:null,pendingShapePlayer:null,pendingPenalty:null,dealt:true,readyPlayers:[],message:"Cards dealt randomly! "+room.players[turn].name+" starts."});
 }
 function newLudo(){return {tokens:{"0":[-1,-1,-1,-1],"1":[-1,-1,-1,-1]},turn:0,dice:null,winner:"",message:"Roll a 6 to bring a token out of the yard. Reach Home with an exact roll."};}
 function initialState(){return {ttt:{cells:Array(9).fill(""),turn:"X",winner:"",moves:0},whot:newWhot(),ludo:newLudo(),quiz:{index:0,answers:{},scores:[0,0]},truth:{turn:0,prompt:"Choose Truth or Dare to begin."}};}
@@ -151,20 +154,24 @@ function moveLudo(g,p,tokenIndex){
 }
 function renderWhot(g){
  const p=me(),hand=g.hands[p]||[],opponent=1-p,opponentHand=g.hands[opponent]||[],top=g.top;
- const playable=hand.some(c=>whotCanPlay(c,g));
+ const playable=g.dealt&&hand.some(c=>whotCanPlay(c,g)),ready=(g.readyPlayers||[]).includes(p);
  let h='<div class="naija-whot-table">';
- h+='<div class="whot-opponent"><div class="whot-player-badge"><span class="whot-avatar">♥</span><span><b>'+myName(opponent)+'</b><small>OPPONENT · '+opponentHand.length+' CARDS</small></span></div><div class="opponent-hand">'+opponentHand.map(()=>'<span class="card-back"><i>W</i><small>NAIJA WHOT</small></span>').join('')+'</div></div>';
- h+='<div class="whot-arena"><div class="whot-pile"><small>MARKET</small><button id="drawPile" class="playingcard card-back market-card" '+(g.turn!==p||g.winner||room.players.length<2||g.pendingShapePlayer!==null?'disabled':'')+'><i>W</i><small>DRAW</small></button><b>'+g.deck.length+' left</b></div>';
- h+='<div class="whot-pile discard-pile"><small>PLAYING CARD</small><div class="playingcard top-playing-card '+(top.s===5?"whot-card":"suit-"+top.s)+'">'+whotFace(top,top.s===5?(g.calledShape===null?"CALL A SHAPE":shapeNames[g.calledShape]):shapeNames[top.s])+'</div><b>DISCARD PILE</b></div></div>';
- h+='<div class="whot-turn-strip '+(g.turn===p?'your-turn':'')+'"><span>'+(g.winner?'🏆 GAME OVER':g.turn===p?'✨ YOUR TURN':'⏳ OPPONENT’S TURN')+'</span><span>'+hand.length+' cards in your hand</span></div>';
- h+='<p class="whot-message">'+esc(g.message)+'</p>';
- if(g.pendingShapePlayer===p&&g.pendingShapeIndex!==null){h+='<div class="shape-picker"><b>WHOT 20 — choose your shape</b><div class="shape-options">'+shapeNames.map((n,i)=>'<button class="shape-choice" data-shape="'+i+'"><span>'+shapeGlyphs[i]+'</span><small>'+n+'</small></button>').join("")+'</div></div>';}
- else if(g.pendingShapePlayer!==null){h+='<p class="notice">Your partner is choosing a shape…</p>';}
- h+='<div class="whot-hand-title"><b>YOUR CARDS</b><small>'+(playable?'Play a matching number or shape':'No matching card? Draw from the market')+'</small></div>';
- h+='<div class="cards whot-hand">'+hand.map((c,i)=>'<button class="playingcard '+(c.s===5?"whot-card":"suit-"+c.s)+' '+(whotCanPlay(c,g)?"can-play":"cannot-play")+'" data-card="'+i+'" aria-label="'+esc(cardLabel(c)+" "+(c.s===5?"WHOT":shapeNames[c.s]))+'" '+(g.turn!==p||g.winner||room.players.length<2||g.pendingShapePlayer!==null||!whotCanPlay(c,g)?'disabled':'')+'>'+whotFace(c,c.s===5?"WHOT":shapeNames[c.s])+'</button>').join("")+'</div>';
- h+='<div class="actions center-actions"><button id="drawCard" class="gold" '+(g.turn!==p||g.winner||room.players.length<2||g.pendingShapePlayer!==null?'disabled':'')+'>'+(g.pendingPenalty?"Pick "+g.pendingPenalty.amount+" cards":"Draw from Market")+'</button><button id="resetWhot" class="secondary">Restart WHOT</button></div>';
- h+='<p class="notice">Naija WHOT rules: 1 Hold On · 2 Pick Two · 5 Pick Three · 8 Suspension · 14 General Market · WHOT 20 lets you call a shape.</p></div>';
- return h;
+ h+='<div class="whot-opponent"><div class="whot-player-badge"><span class="whot-avatar">♥</span><span><b>'+myName(opponent)+'</b><small>OPPONENT · '+(g.dealt?opponentHand.length:0)+' CARDS</small></span></div><div class="opponent-hand">'+(g.dealt?opponentHand.map(()=>'<span class="card-back"><i>W</i><small>NAIJA WHOT</small></span>').join(''):'<span class="deal-waiting">READY TO DEAL</span>')+'</div></div>';
+ h+='<div class="whot-arena"><div class="whot-pile"><small>MARKET</small><button id="drawPile" class="playingcard card-back market-card" '+(!g.dealt||g.turn!==p||g.winner||room.players.length<2||g.pendingShapePlayer!==null?'disabled':'')+'><i>W</i><small>DRAW</small></button><b>'+(g.dealt?g.deck.length+" LEFT":"SHUFFLED DECK")+'</b></div>';
+ h+='<div class="whot-pile discard-pile"><small>'+(g.dealt?'PLAYING CARD':'TAP TO DEAL')+'</small>'+(top?'<div class="playingcard top-playing-card '+(top.s===5?"whot-card":"suit-"+top.s)+'">'+whotFace(top,top.s===5?(g.calledShape===null?"CALL A SHAPE":shapeNames[g.calledShape]):shapeNames[top.s])+'</div>':'<button id="dealPile" class="playingcard market-card deal-pile" aria-label="Tap cards to deal"><i>W</i><small>DEAL</small></button>')+'<b>'+(g.dealt?'DISCARD PILE':'BOTH PLAYERS TAP')+'</b></div></div>';
+ if(!g.dealt){
+  h+='<div class="whot-deal-panel"><div class="whot-turn-strip"><span>🃏 READY TO DEAL</span><span>'+(g.readyPlayers||[]).length+'/2 READY</span></div><h2>Shuffle. Tap. Deal.</h2><p class="whot-message">'+esc(g.message)+'</p><p class="deal-hint">Both of you tap the deck. When you are both ready, six random cards are dealt to each player.</p><button id="dealWhot" class="gold deal-button" '+(room.players.length<2||ready?'disabled':'')+'>'+(ready?'✓ YOU ARE READY':'🃏 TAP THE DECK TO DEAL')+'</button><p class="deal-ready">'+(ready?'Waiting for your partner to tap…':room.players.length<2?'Waiting for your partner to join…':'Tap when you are ready; your partner must tap too.')+'</p></div>';
+ }else{
+  h+='<div class="whot-turn-strip '+(g.turn===p?'your-turn':'')+'"><span>'+(g.winner?'🏆 GAME OVER':g.turn===p?'✨ YOUR TURN':'⏳ OPPONENT’S TURN')+'</span><span>'+hand.length+' cards in your hand</span></div>';
+  h+='<p class="whot-message">'+esc(g.message)+'</p>';
+  if(g.pendingShapePlayer===p&&g.pendingShapeIndex!==null)h+='<div class="shape-picker"><b>WHOT 20 — choose your shape</b><div class="shape-options">'+shapeNames.map((n,i)=>'<button class="shape-choice" data-shape="'+i+'"><span>'+shapeGlyphs[i]+'</span><small>'+n+'</small></button>').join("")+'</div></div>';
+  else if(g.pendingShapePlayer!==null)h+='<p class="notice">Your partner is choosing a shape…</p>';
+  h+='<div class="whot-hand-title"><b>YOUR CARDS</b><small>'+(playable?'Play a matching number or shape':'No matching card? Draw from the market')+'</small></div>';
+  h+='<div class="cards whot-hand">'+hand.map((c,i)=>'<button class="playingcard '+(c.s===5?"whot-card":"suit-"+c.s)+' '+(whotCanPlay(c,g)?"can-play":"cannot-play")+'" data-card="'+i+'" aria-label="'+esc(cardLabel(c)+" "+(c.s===5?"WHOT":shapeNames[c.s]))+'" '+(g.turn!==p||g.winner||room.players.length<2||g.pendingShapePlayer!==null||!whotCanPlay(c,g)?'disabled':'')+'>'+whotFace(c,c.s===5?"WHOT":shapeNames[c.s])+'</button>').join("")+'</div>';
+  h+='<div class="actions center-actions"><button id="drawCard" class="gold" '+(g.turn!==p||g.winner||room.players.length<2||g.pendingShapePlayer!==null?'disabled':'')+'>'+(g.pendingPenalty?"Pick "+g.pendingPenalty.amount+" cards":"Draw from Market")+'</button><button id="resetWhot" class="secondary">Restart WHOT</button></div>';
+ }
+ if(!g.dealt)h+='<div class="actions center-actions"><button id="resetWhot" class="secondary">Reset deal</button></div>';
+ h+='</div>';return h;
 }
 function renderLudo(g){
  const p=me(),dice=g.dice,legal=ludoLegalTokens(g,p);
@@ -227,7 +234,8 @@ function wireGame(){
  document.querySelectorAll("[data-cell]").forEach(b=>b.onclick=()=>change(s=>{const g=s.ttt,i=+b.dataset.cell,mark=me()===0?"X":"O",lines=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];if(g.cells[i]||g.winner||g.turn!==mark||room.players.length<2)return;g.cells[i]=mark;g.moves++;if(lines.some(l=>l.every(n=>g.cells[n]===mark)))g.winner=room.players[me()].name;else g.turn=mark==="X"?"O":"X";}));
  const back=$("backToGames");if(back)back.onclick=()=>{gameOpen=false;const picker=document.querySelector(".games"),area=$("gameArea");picker.classList.remove("hidden");area.classList.add("hidden");picker.scrollIntoView({behavior:"smooth",block:"start"});};
  const rt=$("resetTtt");if(rt)rt.onclick=()=>change(s=>{s.ttt={cells:Array(9).fill(""),turn:"X",winner:"",moves:0};});
- document.querySelectorAll("[data-card]").forEach(b=>b.onclick=()=>change(s=>{const g=s.whot,p=me(),i=+b.dataset.card,c=(g.hands[p]||[])[i];if(g.turn!==p||g.winner||g.pendingShapePlayer!==null||room.players.length<2||!c||!whotCanPlay(c,g))return;if(c.s===5){g.pendingShapeIndex=i;g.pendingShapePlayer=p;g.message="Choose the shape to call.";return;}playWhotCard(g,p,i);}));
+ const dealWhotBtn=$("dealWhot"),dealPile=$("dealPile");const tapToDeal=()=>change(s=>{const g=s.whot;if(g.dealt||room.players.length<2)return;const ready=Array.isArray(g.readyPlayers)?g.readyPlayers:[];if(ready.includes(me()))return;g.readyPlayers=ready.concat(me());if(g.readyPlayers.length>=2)dealWhot(g);else g.message=room.players[me()].name+" is ready. Waiting for the other player to tap the deck.";});if(dealWhotBtn)dealWhotBtn.onclick=tapToDeal;if(dealPile)dealPile.onclick=tapToDeal;
+  document.querySelectorAll("[data-card]").forEach(b=>b.onclick=()=>change(s=>{const g=s.whot,p=me(),i=+b.dataset.card,c=(g.hands[p]||[])[i];if(g.turn!==p||g.winner||g.pendingShapePlayer!==null||room.players.length<2||!c||!whotCanPlay(c,g))return;if(c.s===5){g.pendingShapeIndex=i;g.pendingShapePlayer=p;g.message="Choose the shape to call.";return;}playWhotCard(g,p,i);}));
  document.querySelectorAll("[data-shape]").forEach(b=>b.onclick=()=>change(s=>{const g=s.whot,p=me(),shape=+b.dataset.shape;if(g.pendingShapePlayer!==p||g.pendingShapeIndex===null)return;playWhotCard(g,p,g.pendingShapeIndex,shape);}));
  const drawFromMarket=()=>change(s=>{const g=s.whot,p=me();if(g.turn!==p||g.winner||g.pendingShapePlayer!==null||room.players.length<2)return;if(g.pendingPenalty){const amount=g.pendingPenalty.amount;for(let n=0;n<amount;n++){const c=drawWhotCard(g);if(c)g.hands[p].push(c);}g.pendingPenalty=null;g.turn=1-p;g.message=room.players[p].name+" picked "+amount+" card(s) from the Market. Turn passes.";}else{const c=drawWhotCard(g);if(!c){g.message="No cards remain to draw. Restart the game.";return;}g.hands[p].push(c);g.turn=1-p;g.message=room.players[p].name+" picked a card from the Market. Turn passes.";}});const dr=$("drawCard");if(dr)dr.onclick=drawFromMarket;const pile=$("drawPile");if(pile)pile.onclick=drawFromMarket;
  const rw=$("resetWhot");if(rw)rw.onclick=()=>change(s=>{s.whot=newWhot();});
