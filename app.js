@@ -156,8 +156,9 @@ function ludoOwnAt(g,colour,pos,exclude){return (g.tokens[String(colour)]||[]).s
 function ludoCanLand(g,colour,pos,dice){
  ensureLudoState(g);if(!ludoCanMove(pos,dice))return false;
  if(pos===-1)return dice===6;
+ if(pos<=51&&ludoPathBlocked(g,colour,pos,dice))return false;
  const next=pos+dice;if(next>57)return false;
- if(next>=52)return true;
+ if(next>=52)return !!g.hasCaptured[String(ludoOwner(colour))];
  const landing=ludoGlobal(colour,next),owner=ludoOwner(colour);
  for(let col=0;col<4;col++){
   const same=(g.tokens[String(col)]||[]).filter(v=>v>=0&&v<=51&&ludoGlobal(col,v)===landing).length;
@@ -167,6 +168,19 @@ function ludoCanLand(g,colour,pos,dice){
  if(LUDO_SAFE.has(landing))return true;
  const enemyCount=[];for(let col=0;col<4;col++)if(ludoOwner(col)!==owner)(g.tokens[String(col)]||[]).forEach(v=>{if(v>=0&&v<=51&&ludoGlobal(col,v)===landing)enemyCount.push(v);});
  return enemyCount.length<2;
+}
+function ludoPathBlocked(g,colour,from,dice){
+ if(from<0||from>51)return false;
+ const owner=ludoOwner(colour);
+ for(let step=1;step<dice;step++){
+  const progress=from+step;if(progress>51)break;
+  const square=ludoGlobal(colour,progress);
+  for(let col=0;col<4;col++)if(ludoOwner(col)!==owner){
+   const count=(g.tokens[String(col)]||[]).filter(v=>v>=0&&v<=51&&ludoGlobal(col,v)===square).length;
+   if(count>=2)return true;
+  }
+ }
+ return false;
 }
 function ludoLegalTokens(g,p){ensureLudoState(g);const out=[];for(let colour=0;colour<4;colour++)if(ludoOwner(colour)===p)(g.tokens[String(colour)]||[]).forEach((pos,i)=>{if(ludoCanLand(g,colour,pos,g.dice))out.push({colour,token:i});});return out;}
 function moveLudo(g,p,colour,tokenIndex){
