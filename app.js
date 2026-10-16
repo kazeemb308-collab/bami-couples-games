@@ -156,17 +156,17 @@ function renderWhot(g){
  const p=me(),hand=g.hands[p]||[],opponent=1-p,opponentHand=g.hands[opponent]||[],top=g.top,dealt=!!top;
  const playable=dealt&&hand.some(c=>whotCanPlay(c,g)),ready=(g.readyPlayers||[]).includes(p);
  let h='<div class="naija-whot-table">';
- h+='<div class="whot-opponent"><div class="whot-player-badge"><span class="whot-avatar">♥</span><span><b>'+myName(opponent)+'</b><small>OPPONENT · '+(dealt?opponentHand.length:0)+' CARDS</small></span></div><div class="opponent-hand">'+(dealt?opponentHand.map(()=>'<span class="card-back"><i>W</i><small>NAIJA WHOT</small></span>').join(''):'<span class="deal-waiting">READY TO DEAL</span>')+'</div></div>';
- h+='<div class="whot-arena"><div class="whot-pile"><small>MARKET</small><button id="drawPile" class="playingcard card-back market-card" '+(!dealt||g.turn!==p||g.winner||room.players.length<2||g.pendingShapePlayer!==null?'disabled':'')+'><i>W</i><small>DRAW</small></button><b>'+(dealt?g.deck.length+" LEFT":"SHUFFLED DECK")+'</b></div>';
+  h+='<div class="whot-opponent"><div class="opponent-hand">'+(dealt?opponentHand.map(()=>'<span class="card-back"><i>W</i></span>').join(''):'')+'</div></div>';
+  h+='<div class="whot-arena"><div class="whot-pile"><button id="drawPile" class="playingcard card-back market-card" aria-label="Draw card" '+(!dealt||g.turn!==p||g.winner||room.players.length<2||g.pendingShapePlayer!==null?'disabled':'')+'><i>W</i></button></div><div class="whot-pile discard-pile">'+(top?'<div class="playingcard top-playing-card '+(top.s===5?"whot-card":"suit-"+top.s)+'">'+whotFace(top,top.s===5?(g.calledShape===null?"CALL A SHAPE":shapeNames[g.calledShape]):shapeNames[top.s])+'</div>':'<button id="dealPile" class="playingcard market-card deal-pile" aria-label="Tap cards to deal"><i>W</i></button>')+'</div></div>';
  h+='<div class="whot-pile discard-pile"><small>'+(dealt?'PLAYING CARD':'TAP TO DEAL')+'</small>'+(top?'<div class="playingcard top-playing-card '+(top.s===5?"whot-card":"suit-"+top.s)+'">'+whotFace(top,top.s===5?(g.calledShape===null?"CALL A SHAPE":shapeNames[g.calledShape]):shapeNames[top.s])+'</div>':'<button id="dealPile" class="playingcard market-card deal-pile" aria-label="Tap cards to deal"><i>W</i><small>DEAL</small></button>')+'<b>'+(dealt?'DISCARD PILE':'BOTH PLAYERS TAP')+'</b></div></div>';
  if(!dealt){
    h+='<div class="whot-deal-panel"><button id="dealWhot" class="gold deal-button" '+(room.players.length<2||ready?'disabled':'')+'>TAP TO PLAY</button></div>';
  }else{
-  h+='<div class="whot-turn-strip '+(g.turn===p?'your-turn':'')+'"><span>'+(g.winner?'🏆 GAME OVER':g.turn===p?'✨ YOUR TURN':'⏳ OPPONENT’S TURN')+'</span><span>'+hand.length+' cards in your hand</span></div>';
-  h+='<p class="whot-message">'+esc(g.message)+'</p>';
-  if(g.pendingShapePlayer===p&&g.pendingShapeIndex!==null)h+='<div class="shape-picker"><b>WHOT 20 — choose your shape</b><div class="shape-options">'+shapeNames.map((n,i)=>'<button class="shape-choice" data-shape="'+i+'"><span>'+shapeGlyphs[i]+'</span><small>'+n+'</small></button>').join("")+'</div></div>';
-  else if(g.pendingShapePlayer!==null)h+='<p class="notice">Your partner is choosing a shape…</p>';
-  h+='<div class="whot-hand-title"><b>YOUR CARDS</b><small>'+(playable?'Play a matching number or shape':'No matching card? Draw from the market')+'</small></div>';
+   h+='';
+   h+='';
+   if(g.pendingShapePlayer===p&&g.pendingShapeIndex!==null)h+='<div class="shape-picker"><div class="shape-options">'+shapeNames.map((n,i)=>'<button class="shape-choice" data-shape="'+i+'" aria-label="'+n+'"><span>'+shapeGlyphs[i]+'</span></button>').join("")+'</div></div>';
+   else if(g.pendingShapePlayer!==null)h+='';
+   h+='<div class="cards whot-hand">'+hand.map((c,i)=>'<button class="playingcard '+(c.s===5?"whot-card":"suit-"+c.s)+' '+(whotCanPlay(c,g)?"can-play":"cannot-play")+'" data-card="'+i+'" aria-label="'+esc(cardLabel(c)+" "+(c.s===5?"WHOT":shapeNames[c.s]))+'" '+(g.turn!==p||g.winner||room.players.length<2||g.pendingShapePlayer!==null||!whotCanPlay(c,g)?'disabled':'')+'>'+whotFace(c,c.s===5?"WHOT":shapeNames[c.s])+'</button>').join("")+'</div>';
   h+='<div class="cards whot-hand">'+hand.map((c,i)=>'<button class="playingcard '+(c.s===5?"whot-card":"suit-"+c.s)+' '+(whotCanPlay(c,g)?"can-play":"cannot-play")+'" data-card="'+i+'" aria-label="'+esc(cardLabel(c)+" "+(c.s===5?"WHOT":shapeNames[c.s]))+'" '+(g.turn!==p||g.winner||room.players.length<2||g.pendingShapePlayer!==null||!whotCanPlay(c,g)?'disabled':'')+'>'+whotFace(c,c.s===5?"WHOT":shapeNames[c.s])+'</button>').join("")+'</div>';
   h+='<div class="actions center-actions"><button id="drawCard" class="gold" '+(g.turn!==p||g.winner||room.players.length<2||g.pendingShapePlayer!==null?'disabled':'')+'>'+(g.pendingPenalty?"Pick "+g.pendingPenalty.amount+" cards":"Draw from Market")+'</button><button id="resetWhot" class="secondary">Restart WHOT</button></div>';
  }
