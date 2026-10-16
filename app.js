@@ -34,7 +34,8 @@ const LUDO_PATH = (() => {
  return p;
 })();
 const LUDO_SAFE = new Set([0,8,13,21,26,34,39,47]);
-const LUDO_START = [0,26];
+const LUDO_START = [0,13,26,39];
+const LUDO_COLOURS = [{name:"RED",css:"red",owner:0},{name:"GREEN",css:"green",owner:0},{name:"YELLOW",css:"yellow",owner:1},{name:"BLUE",css:"blue",owner:1}];
 function say(t){const e=$("globalMessage");e.textContent=t;e.classList.remove("hidden");}
 function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
 function playerName(){return $("playerName").value.trim().slice(0,24)||"Player";}
@@ -54,7 +55,7 @@ function dealWhot(g){
  const top=rest.splice(topIndex,1)[0],turn=Math.floor(Math.random()*2);
  Object.assign(g,{deck:rest,discard:[],hands,top,calledShape:null,turn,winner:"",pendingShapeIndex:null,pendingShapePlayer:null,pendingPenalty:null,dealt:true,readyPlayers:[],message:"Cards dealt randomly! "+room.players[turn].name+" starts."});
 }
-function newLudo(){return {tokens:{"0":[-1,-1,-1,-1],"1":[-1,-1,-1,-1]},turn:0,dice:null,sixStreak:0,winner:"",message:"Roll a 6 to bring a token out. Capture opponents, use safe squares, and reach Home with an exact roll."};}
+function newLudo(){return {tokens:{"0":[-1,-1,-1,-1],"1":[-1,-1,-1,-1],"2":[-1,-1,-1,-1],"3":[-1,-1,-1,-1]},turn:0,dice:null,roll:null,lastRoll:null,sixStreak:0,winner:"",message:"Tap the two dice in the centre to roll. Each player controls two colours (8 seeds)."};}
 function initialState(){return {scores:[0,0],ttt:{cells:Array(9).fill(""),turn:"X",winner:"",moves:0},whot:newWhot(),ludo:newLudo(),quiz:{index:0,answers:{},scores:[0,0]},truth:{turn:0,prompt:"Choose Truth or Dare to begin."}};}
 function me(){return room?room.players.findIndex(p=>p.id===playerId):-1;}
 function myName(p){return esc((room.players[p]||{}).name||("Player "+(p+1)));}
@@ -146,32 +147,34 @@ function playWhotCard(g,p,i,chosenShape){
  return true;
 }
 function ludoCanMove(pos,dice){if(dice===null||dice===undefined)return false;if(pos===-1)return dice===6;if(pos===57)return false;return pos+dice<=57;}
-function ludoGlobal(p,pos){return (LUDO_START[p]+pos)%52;}
-function ludoCanLand(g,p,pos,dice){
+function ludoOwner(colour){return colour<2?0:1;}
+function ludoGlobal(colour,pos){return (LUDO_START[colour]+pos)%52;}
+function ludoCanLand(g,colour,pos,dice){
  if(!ludoCanMove(pos,dice))return false;
  const next=pos===-1?0:pos+dice;
  if(next<0||next>51)return true;
- const landing=ludoGlobal(p,next),opponents=g.tokens[String(1-p)]||[];
- const stacked=opponents.filter(v=>v>=0&&v<=51&&ludoGlobal(1-p,v)===landing).length;
- return LUDO_SAFE.has(landing)||stacked<2;
+ const landing=ludoGlobal(colour,next),owner=ludoOwner(colour);
+ const opponents=[];
+ for(let col=0;col<4;col++)if(ludoOwner(col)!==owner)(g.tokens[String(col)]||[]).forEach(v=>{if(v>=0&&v<=51&&ludoGlobal(col,v)===landing)opponents.push(v);});
+ return LUDO_SAFE.has(landing)||opponents.length<2;
 }
-function ludoLegalTokens(g,p){return (g.tokens[String(p)]||[]).map((pos,i)=>ludoCanLand(g,p,pos,g.dice)?i:-1).filter(i=>i>=0);}
-function moveLudo(g,p,tokenIndex){
- const own=g.tokens[String(p)],pos=own[tokenIndex],dice=g.dice;if(g.turn!==p||!ludoCanLand(g,p,pos,dice))return;
- const before=pos;own[tokenIndex]=pos===-1?0:pos+dice;let captured=false,blocked=false;
+function ludoLegalTokens(g,p){const out=[];for(let colour=0;colour<4;colour++)if(ludoOwner(colour)===p)(g.tokens[String(colour)]||[]).forEach((pos,i)=>{if(ludoCanLand(g,colour,pos,g.dice))out.push({colour,token:i});});return out;}
+function moveLudo(g,p,colour,tokenIndex){
+ const own=g.tokens[String(colour)],pos=own[tokenIndex],dice=g.dice;if(ludoOwner(colour)!==p||g.turn!==p||!ludoCanLand(g,colour,pos,dice))return;
+ const before=pos;own[tokenIndex]=pos===-1?0:pos+dice;let captured=false;
  if(own[tokenIndex]>=0&&own[tokenIndex]<=51){
-  const landing=ludoGlobal(p,own[tokenIndex]),opp=g.tokens[String(1-p)];
-  const enemies=opp.map((v,i)=>({v,i})).filter(x=>x.v>=0&&x.v<=51&&ludoGlobal(1-p,x.v)===landing);
-  if(!LUDO_SAFE.has(landing)&&enemies.length===1){opp[enemies[0].i]=-1;captured=true;}
-  else if(!LUDO_SAFE.has(landing)&&enemies.length>=2){own[tokenIndex]=before;g.message="That square is blocked by two opponent tokens. Choose another token.";return;}
+  const landing=ludoGlobal(colour,own[tokenIndex]),enemies=[];
+  for(let col=0;col<4;col++)if(ludoOwner(col)!==p)(g.tokens[String(col)]||[]).forEach((v,i)=>{if(v>=0&&v<=51&&ludoGlobal(col,v)===landing)enemies.push({colour:col,index:i});});
+  if(!LUDO_SAFE.has(landing)&&enemies.length===1){g.tokens[String(enemies[0].colour)][enemies[0].index]=-1;captured=true;}
+  else if(!LUDO_SAFE.has(landing)&&enemies.length>=2){own[tokenIndex]=before;g.message="That square is blocked by two opponent seeds. Choose another seed.";return;}
  }
- const finished=own[tokenIndex]===57;
- if(own.every(v=>v===57)){g.winner=room.players[p].name;g.message=g.winner+" wins Ludo! 🏆";}
- else if(finished){g.message=room.players[p].name+" brought token "+(tokenIndex+1)+" Home!";}
- else if(captured){g.message=room.players[p].name+" captured an opponent token! Back to the yard!";}
- else if(before===-1){g.message=room.players[p].name+" brought token "+(tokenIndex+1)+" out of the yard." ;}
- else{g.message=room.players[p].name+" moved token "+(tokenIndex+1)+" by "+dice+".";}
- const extra=dice===6||captured||finished;g.dice=null;if(dice!==6)g.sixStreak=0;if(!g.winner&&!extra)g.turn=1-p;
+ const finished=own[tokenIndex]===57,allColours=colour<2?[0,1]:[2,3],allHome=allColours.every(col=>g.tokens[String(col)].every(v=>v===57));
+ if(allHome){g.winner=room.players[p].name;g.message=g.winner+" wins Naija Ludo! 🏆";}
+ else if(finished){g.message=room.players[p].name+" brought a "+LUDO_COLOURS[colour].name.toLowerCase()+" seed Home!";}
+ else if(captured){g.message=room.players[p].name+" captured an opponent seed! Back to the yard!";}
+ else if(before===-1){g.message=room.players[p].name+" brought a "+LUDO_COLOURS[colour].name.toLowerCase()+" seed out of the yard.";}
+ else{g.message=room.players[p].name+" moved a "+LUDO_COLOURS[colour].name.toLowerCase()+" seed by "+dice+".";}
+ const extra=dice===6||captured||finished;g.dice=null;g.roll=null;if(dice!==6)g.sixStreak=0;if(!g.winner&&!extra)g.turn=1-p;
 }
 function renderWhot(g){
  const p=me(),hand=g.hands[p]||[],opponent=1-p,opponentHand=g.hands[opponent]||[],top=g.top,dealt=!!top;
@@ -195,41 +198,38 @@ function renderWhot(g){
 }
 function ludoDieFace(n){return n===null||n===undefined?"🎲":(["","⚀","⚁","⚂","⚃","⚄","⚅"][n]||"🎲");}
 function renderLudo(g){
- const p=me(),dice=g.dice;
- const tokenButtons=player=>g.tokens[String(player)].map((v,i)=>'<button class="token-pick '+(player===0?'red-token':'blue-token')+'" data-token-player="'+player+'" data-token="'+i+'" '+(p!==player||g.dice===null||!ludoCanLand(g,player,v,g.dice)||g.winner||room.players.length<2?'disabled':'')+'><span class="token-mini">● '+(i+1)+'</span><small>'+ludoPosLabel(v)+'</small></button>').join("");
- let h='<div class="ludo-wrap"><div class="ludo-head"><button id="rollDice" class="dice-card dice-roll-button" aria-label="Tap to roll the dice" '+(g.turn!==p||dice!==null||g.winner||room.players.length<2?'disabled':'')+'><div class="muted">TAP TO ROLL</div><div class="ludo-dice '+(dice!==null?'has-result':'')+'">'+ludoDieFace(dice===null?(g.lastRoll??null):dice)+'</div><small class="dice-tap-label">'+(dice===null?(g.lastRoll?'LAST: '+g.lastRoll:'ROLL DICE'):'RESULT: '+dice)+'</small></button><div class="ludo-message"><b>'+esc(g.message)+'</b><p class="muted">Turn: '+myName(g.turn)+(g.sixStreak?' · Six streak: '+g.sixStreak+'/3':'')+'</p></div><div class="ludo-match-badge">'+(room.players.length<2?'WAITING FOR PLAYER':'RED 🔴 VS BLUE 🔵')+'</div></div>';
- h+='<div class="ludo-board-frame"><div class="ludo-board-title"><b>NAIJA LUDO</b><span>RED vs BLUE</span></div>'+renderLudoBoard(g)+'</div>';
- h+='<div class="ludo-player red-player"><h3><span class="player-colour-dot red-dot"></span>'+myName(0)+' <span class="muted">· '+g.tokens["0"].filter(v=>v===57).length+'/4 HOME</span></h3><div class="token-tray">'+tokenButtons(0)+'</div></div>';
- h+='<div class="ludo-player blue-player"><h3><span class="player-colour-dot blue-dot"></span>'+myName(1)+' <span class="muted">· '+g.tokens["1"].filter(v=>v===57).length+'/4 HOME</span></h3><div class="token-tray">'+tokenButtons(1)+'</div></div>';
- h+='<div class="ludo-rules"><b>HOW TO WIN</b><span>Roll a 6 to leave the yard · Capture single enemy tokens · Two tokens block a square · Safe stars protect tokens · Exact roll to finish · Three sixes in a row loses your turn</span></div></div>';
- return h;
+ const p=me(),dice=g.dice,ownedColours=p===0?[0,1]:[2,3];
+ const dieButton='<button id="rollDice" class="dice-card dice-roll-button" aria-label="Tap the two dice to roll" '+(g.turn!==p||dice!==null||g.winner||room.players.length<2?'disabled':'')+'><div class="muted">TAP DICE TO ROLL</div><div class="ludo-dice-pair"><span class="ludo-die">'+ludoDieFace(g.roll?.[0]??null)+'</span><span class="ludo-die">'+ludoDieFace(g.roll?.[1]??null)+'</span></div><small class="dice-tap-label">'+(dice===null?(g.roll?'LAST TOTAL: '+g.roll.reduce((a,b)=>a+b,0):'ROLL BOTH DICE'):'TOTAL: '+dice)+'</small></button>';
+ let h='<div class="ludo-wrap"><div class="ludo-head ludo-head-center">'+dieButton+'<div class="ludo-message"><b>'+esc(g.message)+'</b><p class="muted">Turn: '+myName(g.turn)+' · controls '+(p===0?'RED + GREEN':'YELLOW + BLUE')+(g.sixStreak?' · Six streak: '+g.sixStreak+'/3':'')+'</p></div><div class="ludo-match-badge">'+(room.players.length<2?'WAITING FOR PLAYER':'🔴 RED + 🟢 GREEN VS 🟡 YELLOW + 🔵 BLUE')+'</div></div>';
+ h+='<div class="ludo-board-frame"><div class="ludo-board-title"><b>NAIJA LUDO</b><span>2 DICE · 16 SEEDS</span></div>'+renderLudoBoard(g)+'</div>';
+ for(const colour of ownedColours){const col=LUDO_COLOURS[colour],tokens=g.tokens[String(colour)];h+='<div class="ludo-player ludo-player-'+col.css+'"><h3><span class="player-colour-dot '+col.css+'-dot"></span>'+myName(p)+' <span class="muted">· '+tokens.filter(v=>v===57).length+'/4 '+col.name+' HOME</span></h3><div class="token-tray">'+tokens.map((v,i)=>'<button class="token-pick '+col.css+'-token" data-token-owner="'+p+'" data-token-colour="'+colour+'" data-token="'+i+'" '+(g.turn!==p||g.dice===null||!ludoCanLand(g,colour,v,g.dice)||g.winner||room.players.length<2?'disabled':'')+'><span class="token-mini">● '+(i+1)+'</span><small>'+ludoPosLabel(v)+'</small></button>').join("")+'</div></div>';}
+ h+='<div class="ludo-rules"><b>HOW TO WIN</b><span>Roll a total of 6 to bring a seed out · Move by the total of both dice · Capture single opponent seeds · Safe stars protect seeds · Exact roll to finish · Each player controls two colours and 8 seeds</span></div></div>';return h;
 }
 function ludoPosLabel(v){if(v===-1)return "Yard";if(v===57)return "Home";if(v>=52)return "Home lane "+(v-51);return "Track "+(v+1);}
 function renderLudoBoard(g){
  const pathMap={};LUDO_PATH.forEach((rc,i)=>pathMap[rc[0]+","+rc[1]]=i);
  const homeMap={};
- for(let i=0;i<5;i++){homeMap["7,"+(i+1)]={p:0,step:i};homeMap["7,"+(13-i)]={p:1,step:i};homeMap[(i+1)+",7"]={p:2,step:i};homeMap[(13-i)+",7"]={p:3,step:i};}
- const yardMap={},yardDefs=[{p:0,cells:[[2,2],[2,4],[4,2],[4,4]]},{p:1,cells:[[10,10],[10,12],[12,10],[12,12]]}];
- yardDefs.forEach(d=>d.cells.forEach((rc,i)=>yardMap[rc.join(",")]={p:d.p,i}));
- let out='<div class="ludo-board" role="group" aria-label="Four-colour Nigerian Ludo board">';
+ for(let i=0;i<5;i++){homeMap["7,"+(i+1)]={colour:0,step:i};homeMap["7,"+(13-i)]={colour:3,step:i};homeMap[(i+1)+",7"]={colour:1,step:i};homeMap[(13-i)+",7"]={colour:2,step:i};}
+ const yardMap={},yardDefs=[{colour:0,cells:[[2,2],[2,4],[4,2],[4,4]]},{colour:1,cells:[[2,10],[2,12],[4,10],[4,12]]},{colour:2,cells:[[10,2],[10,4],[12,2],[12,4]]},{colour:3,cells:[[10,10],[10,12],[12,10],[12,12]]}];
+ yardDefs.forEach(d=>d.cells.forEach((rc,i)=>yardMap[rc.join(",")]={colour:d.colour,i}));
+ let out='<div class="ludo-board" role="group" aria-label="Four-colour Nigerian Ludo board with two dice">';
  for(let r=0;r<15;r++)for(let c=0;c<15;c++){
   const key=r+","+c,trackIndex=pathMap[key],lane=homeMap[key];let cls="ludo-cell",content="";
   if(trackIndex!==undefined){
    cls+=" track-cell";if(LUDO_SAFE.has(trackIndex))cls+=" safe-cell";
-   const pieces=[];for(let p=0;p<2;p++)g.tokens[String(p)].forEach((pos,i)=>{if(pos>=0&&pos<=51&&ludoGlobal(p,pos)===trackIndex)pieces.push('<button class="board-token board-token-button '+(p===0?"red-token-bg":"blue-token-bg")+'" data-token-player="'+p+'" data-token="'+i+'" aria-label="Move '+(p===0?"red":"blue")+' token '+(i+1)+'" '+(me()!==p||g.dice===null||!ludoCanLand(g,p,pos,g.dice)||g.winner||room.players.length<2?'disabled':'')+'>'+(i+1)+'</button>');});
+   const pieces=[];for(let colour=0;colour<4;colour++)g.tokens[String(colour)].forEach((pos,i)=>{if(pos>=0&&pos<=51&&ludoGlobal(colour,pos)===trackIndex){const col=LUDO_COLOURS[colour];pieces.push('<button class="board-token board-token-button '+col.css+'-token-bg" data-token-owner="'+col.owner+'" data-token-colour="'+colour+'" data-token="'+i+'" aria-label="Move '+col.name.toLowerCase()+' seed '+(i+1)+'" '+(me()!==col.owner||g.dice===null||!ludoCanLand(g,colour,pos,g.dice)||g.winner||room.players.length<2?'disabled':'')+'>'+(i+1)+'</button>');}});
    content=(LUDO_SAFE.has(trackIndex)?'<span class="safe-star">★</span>':"")+pieces.join("");
-   if(trackIndex===LUDO_START[0])cls+=" red-start";if(trackIndex===LUDO_START[1])cls+=" blue-start";
+   if(trackIndex===LUDO_START[0])cls+=" red-start";if(trackIndex===LUDO_START[1])cls+=" green-start";if(trackIndex===LUDO_START[2])cls+=" yellow-start";if(trackIndex===LUDO_START[3])cls+=" blue-start";
   }else if(lane){
-   cls+=" home-lane "+["red-lane","blue-lane","green-lane","yellow-lane"][lane.p];
-   if(lane.p<2){const pos=52+lane.step;const pieces=[];g.tokens[String(lane.p)].forEach((v,i)=>{if(v===pos)pieces.push('<button class="board-token board-token-button '+(lane.p===0?"red-token-bg":"blue-token-bg")+'" data-token-player="'+lane.p+'" data-token="'+i+'" aria-label="Move token '+(i+1)+' home" '+(me()!==lane.p||g.dice===null||!ludoCanLand(g,lane.p,v,g.dice)||g.winner||room.players.length<2?'disabled':'')+'>'+(i+1)+'</button>');});content=pieces.join("")||(lane.step===4?"◆":"");}
-   else content=lane.step===4?"◆":"";
+   const col=LUDO_COLOURS[lane.colour];cls+=" home-lane "+col.css+"-lane";
+   const pos=52+lane.step,pieces=[];g.tokens[String(lane.colour)].forEach((v,i)=>{if(v===pos)pieces.push('<button class="board-token board-token-button '+col.css+'-token-bg" data-token-owner="'+col.owner+'" data-token-colour="'+lane.colour+'" data-token="'+i+'" aria-label="Move '+col.name.toLowerCase()+' seed '+(i+1)+' home" '+(me()!==col.owner||g.dice===null||!ludoCanLand(g,lane.colour,v,g.dice)||g.winner||room.players.length<2?'disabled':'')+'>'+(i+1)+'</button>');});content=pieces.join("")||(lane.step===4?"◆":"");
   }else if(r<=5&&c<=5){cls+=" base-red";}
   else if(r<=5&&c>=9){cls+=" base-green";}
   else if(r>=9&&c<=5){cls+=" base-yellow";}
   else if(r>=9&&c>=9){cls+=" base-blue";}
-  if(r>=6&&r<=8&&c>=6&&c<=8){cls+=" center-home";if(r===7&&c===7)content='<span class="center-heart">♥</span>';else if(r===6&&c===6)cls+=" center-red";else if(r===6&&c===8)cls+=" center-green";else if(r===8&&c===6)cls+=" center-yellow";else if(r===8&&c===8)cls+=" center-blue";}
+  if(r>=6&&r<=8&&c>=6&&c<=8){cls+=" center-home";if(r===7&&c===7)content='<div class="center-dice-area"><span class="center-heart">♥</span><span class="center-dice-hint">ROLL</span></div>';else if(r===6&&c===6)cls+=" center-red";else if(r===6&&c===8)cls+=" center-green";else if(r===8&&c===6)cls+=" center-yellow";else if(r===8&&c===8)cls+=" center-blue";}
   const yard=yardMap[key];
-  if(yard){const p=yard.p,tokenIndex=yard.i,pos=g.tokens[String(p)][tokenIndex];cls+=" yard-cell "+(p===0?"yard-red":"yard-blue");content=pos===-1?'<button class="yard-token '+(p===0?"red-token-bg":"blue-token-bg")+'" data-token-player="'+p+'" data-token="'+tokenIndex+'" aria-label="Move token '+(tokenIndex+1)+' out of yard" '+(me()!==p||g.dice!==6||g.winner||room.players.length<2?'disabled':'')+'>'+(tokenIndex+1)+'</button>':"";}
+  if(yard){const colour=yard.colour,col=LUDO_COLOURS[colour],tokenIndex=yard.i,pos=g.tokens[String(colour)][tokenIndex];cls+=" yard-cell yard-"+col.css;content=pos===-1?'<button class="yard-token '+col.css+'-token-bg" data-token-owner="'+col.owner+'" data-token-colour="'+colour+'" data-token="'+tokenIndex+'" aria-label="Move '+col.name.toLowerCase()+' seed '+(tokenIndex+1)+' out of yard" '+(me()!==col.owner||g.dice!==6||g.winner||room.players.length<2?'disabled':'')+'>'+(tokenIndex+1)+'</button>':"";}
   if((r<=5&&c<=5)||(r<=5&&c>=9)||(r>=9&&c<=5)||(r>=9&&c>=9)){const quad=(r<=5?(c<=5?"red":"green"):(c<=5?"yellow":"blue"));cls+=" base-"+quad;const inHome=(r>=1&&r<=4&&(c>=1&&c<=4||c>=10&&c<=13))||(r>=10&&r<=13&&(c>=1&&c<=4||c>=10&&c<=13));if(inHome)cls+=" base-home";if((r===2||r===4)&&(c===2||c===4)||(r===2||r===4)&&(c===10||c===12)||(r===10||r===12)&&(c===2||c===4)||(r===10||r===12)&&(c===10||c===12))cls+=" base-home-dot";}
   out+='<div class="'+cls+'">'+content+'</div>';
  }
@@ -290,8 +290,8 @@ function wireGame(){
  document.querySelectorAll("[data-shape]").forEach(b=>b.onclick=()=>change(s=>{const g=s.whot,p=me(),shape=+b.dataset.shape;if(g.pendingShapePlayer!==p||g.pendingShapeIndex===null)return;playWhotCard(g,p,g.pendingShapeIndex,shape);}));
  const drawFromMarket=()=>change(s=>{const g=s.whot,p=me();if(g.turn!==p||g.winner||g.pendingShapePlayer!==null||room.players.length<2)return;if(g.pendingPenalty){const amount=g.pendingPenalty.amount;for(let n=0;n<amount;n++){const c=drawWhotCard(g);if(c)g.hands[p].push(c);}g.pendingPenalty=null;g.turn=1-p;g.message=room.players[p].name+" picked "+amount+" card(s) from the Market. Turn passes.";}else{const c=drawWhotCard(g);if(!c){g.message="No cards remain to draw. Restart the game.";return;}g.hands[p].push(c);g.turn=1-p;g.message=room.players[p].name+" picked a card from the Market. Turn passes.";}});const dr=$("drawCard");if(dr)dr.onclick=drawFromMarket;const pile=$("drawPile");if(pile)pile.onclick=drawFromMarket;
  const rw=$("resetWhot");if(rw)rw.onclick=()=>change(s=>{s.whot=newWhot();});
- const roll=$("rollDice");if(roll)roll.onclick=()=>{if(roll.disabled||roll.dataset.rolling==="1")return;roll.dataset.rolling="1";roll.disabled=true;roll.classList.add("is-rolling");roll.querySelector(".ludo-dice").textContent="🎲";setTimeout(()=>{change(s=>{const g=s.ludo,p=me();if(g.turn!==p||g.dice!==null||g.winner||room.players.length<2)return;const rolled=1+Math.floor(Math.random()*6);g.lastRoll=rolled;g.dice=rolled;if(rolled===6){g.sixStreak=(g.sixStreak||0)+1;if(g.sixStreak>=3){g.message=room.players[p].name+" rolled three sixes in a row! Turn forfeited.";g.turn=1-p;g.dice=null;g.sixStreak=0;return;}}else g.sixStreak=0;const legal=ludoLegalTokens(g,p);if(!legal.length){g.message=room.players[p].name+" rolled "+rolled+" but has no legal move. Turn passes.";g.turn=1-p;g.dice=null;g.sixStreak=0;}else g.message=room.players[p].name+" rolled "+rolled+". Tap one of your movable tokens on the board or below.";}).finally(()=>{const current=$("rollDice");if(current){current.dataset.rolling="";current.classList.remove("is-rolling");}});},720);};
- document.querySelectorAll("[data-token-player]").forEach(b=>b.onclick=()=>change(s=>{const g=s.ludo,p=me(),tokenPlayer=+b.dataset.tokenPlayer,token=+b.dataset.token;if(tokenPlayer!==p||g.turn!==p||g.winner||room.players.length<2)return;moveLudo(g,p,token);}));
+ const roll=$("rollDice");if(roll)roll.onclick=()=>{if(roll.disabled||roll.dataset.rolling==="1")return;roll.dataset.rolling="1";roll.disabled=true;roll.classList.add("is-rolling");roll.querySelectorAll(".ludo-die").forEach(d=>d.textContent="🎲");setTimeout(()=>{change(s=>{const g=s.ludo,p=me();if(g.turn!==p||g.dice!==null||g.winner||room.players.length<2)return;const a=1+Math.floor(Math.random()*6),b=1+Math.floor(Math.random()*6),rolled=a+b;g.roll=[a,b];g.lastRoll=rolled;g.dice=rolled;if(rolled===6){g.sixStreak=(g.sixStreak||0)+1;if(g.sixStreak>=3){g.message=room.players[p].name+" rolled a total of 6 three times in a row! Turn forfeited.";g.turn=1-p;g.dice=null;g.roll=null;g.sixStreak=0;return;}}else g.sixStreak=0;const legal=ludoLegalTokens(g,p);if(!legal.length){g.message=room.players[p].name+" rolled "+a+" + "+b+" = "+rolled+" but has no legal move. Turn passes.";g.turn=1-p;g.dice=null;g.roll=null;g.sixStreak=0;}else g.message=room.players[p].name+" rolled "+a+" + "+b+" = "+rolled+". Tap one of your movable seeds.";}).finally(()=>{const current=$("rollDice");if(current){current.dataset.rolling="";current.classList.remove("is-rolling");}});},720);};
+ document.querySelectorAll("[data-token-owner]").forEach(b=>b.onclick=()=>change(s=>{const g=s.ludo,p=me(),owner=+b.dataset.tokenOwner,colour=+b.dataset.tokenColour,token=+b.dataset.token;if(owner!==p||g.turn!==p||g.winner||room.players.length<2)return;moveLudo(g,p,colour,token);}));
  const rl=$("resetLudo");if(rl)rl.onclick=()=>change(s=>{s.ludo=newLudo();});
  document.querySelectorAll("[data-answer]").forEach(b=>b.onclick=()=>change(s=>{if(room.players.length<2)return;if(Array.isArray(s.quiz.answers))s.quiz.answers={};s.quiz.answers[me()]=+b.dataset.answer;}));
  const nq=$("nextQuiz");if(nq)nq.onclick=()=>change(s=>{const g=s.quiz;if(g.answers[0]===undefined||g.answers[1]===undefined)return;if(g.answers[0]===g.answers[1]){g.scores[0]++;g.scores[1]++;}g.index=(g.index+1)%quiz.length;g.answers={};});
