@@ -147,7 +147,7 @@ function playWhotCard(g,p,i,chosenShape){
  return true;
 }
 function ludoCanMove(pos,dice){if(dice===null||dice===undefined)return false;if(pos===-1)return dice===6;if(pos===57)return false;return pos+dice<=57;}
-function ensureLudoState(g){if(!g.tokens)g.tokens={};for(let col=0;col<4;col++)if(!Array.isArray(g.tokens[String(col)]))g.tokens[String(col)]=[-1,-1,-1,-1];if(!Array.isArray(g.roll))g.roll=null;}
+function ensureLudoState(g){if(!g.tokens)g.tokens={};if(!Array.isArray(g.tokens["2"])&&!Array.isArray(g.tokens["3"])&&Array.isArray(g.tokens["1"])){g.tokens["3"]=g.tokens["1"].slice();g.tokens["1"]=[-1,-1,-1,-1];}for(let col=0;col<4;col++)if(!Array.isArray(g.tokens[String(col)]))g.tokens[String(col)]=[-1,-1,-1,-1];if(!Array.isArray(g.roll))g.roll=null;}
 function ludoOwner(colour){return colour<2?0:1;}
 function ludoGlobal(colour,pos){return (LUDO_START[colour]+pos)%52;}
 function ludoCanLand(g,colour,pos,dice){
