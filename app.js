@@ -376,6 +376,21 @@ document.querySelectorAll("[data-ludo-die]").forEach(b=>b.onclick=()=>change(s=>
  const nt=$("nextTruth");if(nt)nt.onclick=()=>change(s=>{if(s.truth.turn!==me())return;s.truth.turn=1-s.truth.turn;s.truth.prompt="Choose Truth or Dare to begin.";});
 }
 $("createRoom").onclick=createRoom;$("joinRoom").onclick=joinRoom;
+function returnToGamePicker(ev){
+ if(ev){ev.preventDefault();ev.stopPropagation();if(ev.stopImmediatePropagation)ev.stopImmediatePropagation();}
+ gameOpen=false;
+ const area=$("gameArea"),picker=document.querySelector(".games"),section=$("roomSection");
+ if(area){area.innerHTML='<div class="center muted">Choose a game to start.</div>';area.classList.add("hidden");area.style.display="none";}
+ if(picker){picker.classList.remove("hidden");picker.style.display="grid";}
+ if(section)section.classList.remove("hidden");
+ document.body.style.overflow="";document.documentElement.style.overflow="";
+ window.scrollTo(0,0);
+ if(picker)picker.scrollIntoView({behavior:"auto",block:"start"});
+}
+document.addEventListener("click",function(ev){
+ const back=ev.target&&ev.target.closest?ev.target.closest("#tttBackToGames, #backToGames"):null;
+ if(back){returnToGamePicker(ev);}
+},true);
 document.querySelectorAll(".game").forEach(b=>b.onclick=async()=>{if(!roomId||!db)return say("Create or join a room before choosing a game.");try{await runTransaction(db,async tx=>{const ref=doc(db,"coupleRooms",roomId),snap=await tx.get(ref);if(!snap.exists())throw Error("Room not found.");tx.update(ref,{activeGame:b.dataset.game,gameLaunchId:Date.now()+"-"+Math.random().toString(36).slice(2)});});activeGame=b.dataset.game;gameOpen=true;document.querySelector(".games").classList.add("hidden");const area=$("gameArea");area.style.display="";area.classList.remove("hidden");renderGame();area.scrollIntoView({behavior:"smooth",block:"start"});}catch(e){say("Could not switch game: "+e.message);}});
 $("copyInvite").onclick=async()=>{try{await navigator.clipboard.writeText(roomId);say("Room code copied: "+roomId);}catch(e){say("Share this room code: "+roomId);}};
 $("leaveRoom").onclick=()=>{saveSession({autoResume:false});if(unsubscribe)unsubscribe();unsubscribe=null;roomId=null;room=null;playerId=null;gameOpen=false;gameLaunchId=null;roomSnapshotInitialized=false;$("gameArea").classList.add("hidden");document.querySelector(".games").classList.remove("hidden");$("roomSection").classList.add("hidden");$("setupPanel").classList.remove("hidden");$("connectionStatus").innerHTML="Firebase ready<br>Not in a room yet";window.scrollTo({top:0,behavior:"smooth"});};
