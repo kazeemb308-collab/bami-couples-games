@@ -331,6 +331,34 @@ body:has(#gameArea .naija-whot-table){overflow:hidden}
 @media(max-width:440px){.ludo-board-frame{padding:6px;border-radius:13px}.ludo-board{width:100%;border-width:3px}.ludo-head{gap:8px}.ludo-message{min-width:115px;font-size:11px}.dice-card{min-width:60px;padding:6px}.ludo-dice{min-width:44px;min-height:46px;font-size:34px}.token-tray{gap:5px}.token-pick{min-height:51px;padding:6px 2px}.ludo-rules{font-size:10px}}
 @media(prefers-reduced-motion:reduce){.board-token-button:not(:disabled){animation:none}}
 
+
+/* Naija Ludo: two-player, four-colour board with two tappable dice in the centre */
+.ludo-head-center{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.ludo-head-center .ludo-message{flex:1;min-width:170px}
+.ludo-match-badge{max-width:100%;font-size:10px;line-height:1.5;text-align:center}
+.ludo-board{display:grid;grid-template-columns:repeat(15,minmax(0,1fr));aspect-ratio:1;overflow:hidden}
+.ludo-cell{aspect-ratio:1;min-width:0;min-height:0;display:flex;align-items:center;justify-content:center;overflow:visible}
+.red-token-bg,.red-token{background:#e53257!important;color:white!important}
+.green-token-bg,.green-token{background:#139b5a!important;color:white!important}
+.yellow-token-bg,.yellow-token{background:#f4c52f!important;color:#382800!important}
+.blue-token-bg,.blue-token{background:#2878e8!important;color:white!important}
+.green-start{background:#159b5b!important;box-shadow:inset 0 0 0 2px #fff5}
+.yellow-start{background:#f2c331!important;box-shadow:inset 0 0 0 2px #fff5}
+.ludo-cell.base-green{background:#a0e5bd!important}.ludo-cell.base-yellow{background:#ffe28a!important}
+.ludo-cell.yard-green{background:#e3f7eb!important}.ludo-cell.yard-yellow{background:#fff5cd!important}
+.ludo-cell.yard-red{background:#fde0e7!important}.ludo-cell.yard-blue{background:#deebff!important}
+.green-dot{background:#139b5a}.yellow-dot{background:#f4c52f}
+.ludo-player-green{border:1px solid #139b5a}.ludo-player-yellow{border:1px solid #d2a51a}
+.center-dice-button{position:relative;z-index:10;width:100%;height:100%;min-width:0;min-height:0;padding:1px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;border:0;border-radius:5px;background:linear-gradient(145deg,#172338,#0a1020);color:white;touch-action:manipulation}
+.center-dice-button.ready{cursor:pointer;box-shadow:inset 0 0 0 2px #f7cf61,0 0 12px #f7cf6166}
+.center-dice-button:disabled{opacity:1;cursor:default}
+.center-dice-pair{display:flex;align-items:center;justify-content:center;gap:2px;width:100%}
+.center-dice-pair .ludo-die{display:grid;place-items:center;width:43%;aspect-ratio:1;min-width:0;border-radius:5px;background:linear-gradient(145deg,#fffef8,#e8dfcc);color:#19243a;font-style:normal;font-size:clamp(8px,2.4vw,23px);line-height:1;box-shadow:0 2px 0 #b7aa91,0 3px 5px #0005;text-shadow:none}
+.center-dice-button small{font-size:clamp(3px,.8vw,7px);line-height:1.1;font-weight:1000;color:#ffdf7b;letter-spacing:.2px}
+.center-dice-button.ready .ludo-die{animation:diceIdle 1.2s ease-in-out infinite}
+.ludo-player .token-pick{color:white}
+@media(max-width:600px){.ludo-head-center{padding:7px}.ludo-head-center .ludo-message{min-width:0}.ludo-match-badge{width:100%;font-size:9px}.ludo-board-frame{padding:4px}.ludo-board{width:100%;gap:1px}.center-dice-pair .ludo-die{font-size:clamp(7px,2.4vw,15px)}.center-dice-button small{font-size:clamp(3px,.8vw,5px)}}
+
 </style>
 </head><body>
 <header><div class="brand">Bami <span>&</span> Oluwatosin <span>♥</span></div><div class="status" id="connectionStatus">Connecting…<br>Private couple room</div></header>
