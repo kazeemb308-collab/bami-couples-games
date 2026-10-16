@@ -197,7 +197,7 @@ function renderLudoBoard(g){
 }
 function renderGame(){
  if(!room)return;const s=room.state,waiting=room.players.length<2?"Waiting for your partner to join…":"Playing with "+(room.players[1-me()]||{}).name;
- let h='<div class="eyebrow">NOW PLAYING</div><h2>'+({whot:"🃏 WHOT!",ludo:"🎲 Ludo",ttt:"⭕ Tic-Tac-Toe",quiz:"💗 Couples Quiz",truth:"🔥 Truth or Dare"}[activeGame])+'</h2><p class="muted">'+esc(waiting)+'</p>';
+ let h='<div class="actions"><button id="backToGames" class="secondary">← All games</button></div><div class="eyebrow">NOW PLAYING</div><h2>'+({whot:"🃏 WHOT!",ludo:"🎲 Ludo",ttt:"⭕ Tic-Tac-Toe",quiz:"💗 Couples Quiz",truth:"🔥 Truth or Dare"}[activeGame])+'</h2><p class="muted">'+esc(waiting)+'</p>';
  if(activeGame==="ttt"){
   const g=s.ttt;h+='<div class="center"><p>'+(g.winner?"Winner: "+esc(g.winner):g.moves===9?"It is a draw!":"Turn: "+g.turn)+'</p><div class="board">'+g.cells.map((v,i)=>'<button class="cell" data-cell="'+i+'" '+(v||g.winner||room.players.length<2?'disabled':'')+'>'+esc(v)+'</button>').join("")+'</div><button id="resetTtt" class="secondary">New round</button></div>';
  }
@@ -213,6 +213,7 @@ function renderGame(){
 }
 function wireGame(){
  document.querySelectorAll("[data-cell]").forEach(b=>b.onclick=()=>change(s=>{const g=s.ttt,i=+b.dataset.cell,mark=me()===0?"X":"O",lines=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];if(g.cells[i]||g.winner||g.turn!==mark||room.players.length<2)return;g.cells[i]=mark;g.moves++;if(lines.some(l=>l.every(n=>g.cells[n]===mark)))g.winner=room.players[me()].name;else g.turn=mark==="X"?"O":"X";}));
+ const back=$("backToGames");if(back)back.onclick=()=>{document.querySelector(".games").classList.remove("hidden");document.querySelector(".games").scrollIntoView({behavior:"smooth",block:"start"});};
  const rt=$("resetTtt");if(rt)rt.onclick=()=>change(s=>{s.ttt={cells:Array(9).fill(""),turn:"X",winner:"",moves:0};});
  document.querySelectorAll("[data-card]").forEach(b=>b.onclick=()=>change(s=>{const g=s.whot,p=me(),i=+b.dataset.card,c=(g.hands[p]||[])[i];if(g.turn!==p||g.winner||g.pendingShapePlayer!==null||room.players.length<2||!c)return;if(c.s===5){g.pendingShapeIndex=i;g.pendingShapePlayer=p;g.message="Choose the shape to call.";return;}playWhotCard(g,p,i);}));
  document.querySelectorAll("[data-shape]").forEach(b=>b.onclick=()=>change(s=>{const g=s.whot,p=me(),shape=+b.dataset.shape;if(g.pendingShapePlayer!==p||g.pendingShapeIndex===null)return;playWhotCard(g,p,g.pendingShapeIndex,shape);}));
@@ -229,7 +230,7 @@ function wireGame(){
  const nt=$("nextTruth");if(nt)nt.onclick=()=>change(s=>{if(s.truth.turn!==me())return;s.truth.turn=1-s.truth.turn;s.truth.prompt="Choose Truth or Dare to begin.";});
 }
 $("createRoom").onclick=createRoom;$("joinRoom").onclick=joinRoom;
-document.querySelectorAll(".game").forEach(b=>b.onclick=async()=>{if(!roomId||!db)return;try{await runTransaction(db,async tx=>{const ref=doc(db,"coupleRooms",roomId),snap=await tx.get(ref);if(!snap.exists())throw Error("Room not found.");tx.update(ref,{activeGame:b.dataset.game});});}catch(e){say("Could not switch game: "+e.message);}});
+document.querySelectorAll(".game").forEach(b=>b.onclick=async()=>{if(!roomId||!db)return;try{await runTransaction(db,async tx=>{const ref=doc(db,"coupleRooms",roomId),snap=await tx.get(ref);if(!snap.exists())throw Error("Room not found.");tx.update(ref,{activeGame:b.dataset.game});});document.querySelector(".games").classList.add("hidden");document.querySelector("#gameArea").scrollIntoView({behavior:"smooth",block:"start"});}catch(e){say("Could not switch game: "+e.message);}});
 $("copyInvite").onclick=async()=>{try{await navigator.clipboard.writeText(roomId);say("Room code copied: "+roomId);}catch(e){say("Share this room code: "+roomId);}};
 $("leaveRoom").onclick=()=>{if(unsubscribe)unsubscribe();unsubscribe=null;roomId=null;room=null;playerId=null;$("roomSection").classList.add("hidden");$("connectionStatus").innerHTML="Firebase ready<br>Not in a room yet";window.scrollTo({top:0,behavior:"smooth"});};
 init();
