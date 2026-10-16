@@ -151,6 +151,12 @@ body:has(#gameArea .naija-whot-table){overflow:hidden}
 .deal-pile small{font-size:10px;letter-spacing:2px}
 .deal-waiting{color:#ffe082;font-size:10px;font-weight:900;letter-spacing:1px}
 @media(max-width:440px){.deal-pile{width:88px;min-width:88px;height:122px;min-height:122px}.whot-deal-panel{padding-top:4px}}
+
+/* WHOT: no visual indication of which cards are legal */
+.naija-whot-table .whot-hand .playingcard.can-play,
+.naija-whot-table .whot-hand .playingcard.cannot-play{transform:none!important;opacity:1!important;filter:none!important;box-shadow:0 5px 0 #9e7847,0 8px 14px #0018!important;border-color:#f7e6c3!important}
+.naija-whot-table .whot-hand .playingcard:not(:disabled):hover,
+.naija-whot-table .whot-hand .playingcard.can-play:active{transform:none!important;box-shadow:0 5px 0 #9e7847,0 8px 14px #0018!important}
 </style>
 </head><body>
 <header><div class="brand">Bami <span>&</span> Oluwatosin <span>♥</span></div><div class="status" id="connectionStatus">Connecting…<br>Private couple room</div></header>
@@ -179,4 +185,4 @@ window.addEventListener("unhandledrejection", function (event) {
   message.textContent = "Startup failed: " + reason;
 });
 </script>
-<script type="module" src="./app.js?v=20261016whotdeal3"></script></body></html>
+<script type="module" src="./app.js?v=20261016no-card-hints"></script></body></html>
