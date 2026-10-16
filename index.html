@@ -197,6 +197,55 @@ body:has(#gameArea .naija-whot-table){overflow:hidden}
 .rematch-panel button:disabled{opacity:.75;cursor:default}
 .rematch-waiting{margin-top:14px;font-size:11px;font-weight:800;color:#7a5b32}
 @media(prefers-reduced-motion:reduce){.rematch-panel{animation:none}}
+
+/* Classic Nigerian four-colour Ludo board and gameplay */
+.ludo-wrap{max-width:760px;margin:0 auto;padding-bottom:18px}
+.ludo-head{background:linear-gradient(135deg,#121b31,#202c43);border:1px solid #43516b;border-radius:18px;padding:12px;box-shadow:0 8px 22px #0003}
+.dice-card{min-width:76px;text-align:center;padding:8px 10px;border-radius:13px;background:#08111f;border:1px solid #48546b}
+.dice-card .muted{font-size:9px;letter-spacing:1px;color:#b7c3d6}
+.ludo-dice{display:grid;place-items:center;min-width:54px;min-height:54px;font-size:40px;font-weight:1000;color:#f8cf62;text-shadow:0 3px 0 #7b5310}
+.ludo-message{font-size:12px;line-height:1.5}.ludo-message p{margin:5px 0 0}
+.ludo-board-frame{margin:16px auto;padding:10px;border-radius:18px;background:linear-gradient(145deg,#24324a,#0c1424);border:1px solid #45536a;box-shadow:0 12px 26px #0004}
+.ludo-board-title{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:2px 4px 10px;color:#f8e4a7;font-size:11px;letter-spacing:1.2px}
+.ludo-board-title span{color:#b6c3d8;font-size:9px;letter-spacing:1px}
+.ludo-board{width:min(100%,520px);margin:0 auto;gap:1px;border:4px solid #f8e8bd;border-radius:5px;background:#f8e8bd;box-shadow:0 4px 0 #9a7744;touch-action:manipulation}
+.ludo-cell{position:relative;border:0;font-size:clamp(5px,1.3vw,10px)}
+.ludo-cell.track-cell{background:#fffdf5;box-shadow:inset 0 0 0 1px #d9d7cd}
+.ludo-cell.safe-cell{background:#fff0a8;color:#9d6a08}
+.ludo-cell.red-start{background:#e63c63!important;box-shadow:inset 0 0 0 2px #fff5}
+.ludo-cell.blue-start{background:#2878e8!important;box-shadow:inset 0 0 0 2px #fff5}
+.ludo-cell.base-red{background:#f4b2c0!important}.ludo-cell.base-green{background:#9de4bb!important}.ludo-cell.base-yellow{background:#ffe18b!important}.ludo-cell.base-blue{background:#9cc4ff!important}
+.ludo-cell.base-home-dot{position:relative}
+.ludo-cell.base-home-dot:after{content:"";position:absolute;width:56%;height:56%;border-radius:50%;background:#fffdf7;border:1px solid #ffffff;box-shadow:inset 0 0 0 2px #00000012}
+.ludo-cell.yard-cell{z-index:1;background:transparent!important}
+.yard-token{position:relative;z-index:2;display:flex;align-items:center;justify-content:center;width:82%;height:82%;min-width:0;padding:0;border-radius:50%;border:2px solid #fff;box-shadow:inset 0 0 0 2px #ffffff70,0 2px 3px #0005;color:#fff;font-size:clamp(6px,1.4vw,11px);font-weight:1000}
+.board-token{position:relative;z-index:2;flex:0 0 auto;width:88%;height:88%;min-width:0;min-height:0;padding:0;border:1px solid #fff;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:clamp(5px,1.25vw,10px);font-weight:1000;color:white;box-shadow:0 1px 3px #0007;line-height:1}
+.board-token-button{cursor:pointer;touch-action:manipulation}
+.board-token-button:not(:disabled){outline:2px solid #ffd75c;outline-offset:1px;animation:ludoTokenPulse 1.2s ease-in-out infinite}
+.board-token-button:disabled{cursor:default;opacity:1}
+.ludo-cell .board-token+.board-token{margin-left:-26%}
+.safe-star{position:absolute;top:0;left:1px;font-size:clamp(5px,1.1vw,9px);color:#a66b00}
+.center-heart{font-size:clamp(8px,2vw,18px);color:#a72c51}
+.center-red{background:#e63c63!important;clip-path:polygon(0 0,100% 50%,0 100%)}
+.center-green{background:#2eaa70!important;clip-path:polygon(0 0,100% 0,50% 100%)}
+.center-yellow{background:#f4c542!important;clip-path:polygon(0 100%,100% 100%,50% 0)}
+.center-blue{background:#2878e8!important;clip-path:polygon(100% 0,100% 100%,0 50%)}
+.red-lane{background:#f5a5b9!important}.blue-lane{background:#8cbaff!important}.green-lane{background:#8de0b3!important}.yellow-lane{background:#ffe28a!important}
+.token-tray{grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}
+.ludo-player{padding:12px;border-radius:16px;background:#101a2d;box-shadow:0 5px 16px #0002}
+.ludo-player h3{display:flex;align-items:center;gap:8px}
+.player-colour-dot{display:inline-block;width:12px;height:12px;flex:0 0 12px;border:2px solid #fff;border-radius:50%;box-shadow:0 1px 4px #0005}
+.red-dot{background:#e63c63}.blue-dot{background:#2878e8}
+.token-pick{min-height:55px;border:1px solid #ffffff45;border-radius:10px;box-shadow:0 3px 0 #0003}
+.token-pick:disabled{opacity:.48;filter:saturate(.6)}
+.token-pick:not(:disabled){outline:2px solid #f8d05d;outline-offset:1px}
+.token-mini{font-size:13px;font-weight:1000}
+.ludo-rules{display:flex;flex-direction:column;gap:6px;margin-top:14px;padding:12px;border-radius:12px;background:#111b2c;border:1px solid #33425b;color:#c7d4e6;font-size:11px;line-height:1.6}
+.ludo-rules b{color:#f8d56e;letter-spacing:1px;font-size:10px}
+@keyframes ludoTokenPulse{0%,100%{outline-color:#ffd75c}50%{outline-color:#ffffff}}
+@media(max-width:440px){.ludo-board-frame{padding:6px;border-radius:13px}.ludo-board{width:100%;border-width:3px}.ludo-head{gap:8px}.ludo-message{min-width:115px;font-size:11px}.dice-card{min-width:60px;padding:6px}.ludo-dice{min-width:44px;min-height:46px;font-size:34px}.token-tray{gap:5px}.token-pick{min-height:51px;padding:6px 2px}.ludo-rules{font-size:10px}}
+@media(prefers-reduced-motion:reduce){.board-token-button:not(:disabled){animation:none}}
+
 </style>
 </head><body>
 <header><div class="brand">Bami <span>&</span> Oluwatosin <span>♥</span></div><div class="status" id="connectionStatus">Connecting…<br>Private couple room</div></header>
@@ -225,4 +274,4 @@ window.addEventListener("unhandledrejection", function (event) {
   message.textContent = "Startup failed: " + reason;
 });
 </script>
-<script type="module" src="./app.js?v=20261016rematch-popup"></script></body></html>
+<script type="module" src="./app.js?v=20261016naija-ludo"></script></body></html>
