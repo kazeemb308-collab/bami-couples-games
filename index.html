@@ -153,6 +153,60 @@ body:has(#gameArea .naija-whot-table),body:has(#gameArea .ludo-wrap){overflow:hi
 }
 @media(min-width:700px){#gameArea:has(.ludo-wrap) .ludo-board{width:min(100%,620px)}}
 
+/* Authentic Naija Ludo board polish + tactile dice roll */
+#gameArea:has(.ludo-wrap){background:radial-gradient(ellipse at top,#1c2b44 0%,#08101d 68%)}
+#gameArea:has(.ludo-wrap) .ludo-head{grid-template-columns:104px minmax(0,1fr) auto;align-items:center;background:linear-gradient(145deg,#18243a,#0b1424);border:1px solid #465672;box-shadow:0 7px 18px #0004}
+#gameArea:has(.ludo-wrap) .dice-roll-button{appearance:none;-webkit-appearance:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-width:0;width:104px;min-height:94px;padding:7px 5px;background:linear-gradient(145deg,#fffef7,#e4e7ed);border:2px solid #f5d36c;border-radius:15px;color:#19243a;box-shadow:0 4px 0 #8e6b28,0 7px 12px #0005;cursor:pointer;touch-action:manipulation}
+#gameArea:has(.ludo-wrap) .dice-roll-button:disabled{opacity:1;cursor:default;filter:saturate(.7)}
+#gameArea:has(.ludo-wrap) .dice-roll-button .muted{font-size:8px;color:#5e6a7e;font-weight:1000;letter-spacing:1px}
+#gameArea:has(.ludo-wrap) .ludo-dice{display:grid;place-items:center;min-width:54px;min-height:51px;color:#152238;font-size:45px;line-height:1;text-shadow:none}
+#gameArea:has(.ludo-wrap) .dice-tap-label{font-size:8px;font-weight:1000;letter-spacing:.8px;color:#8a5d0a}
+#gameArea:has(.ludo-wrap) .dice-roll-button:not(:disabled){animation:diceIdle 2.4s ease-in-out infinite}
+#gameArea:has(.ludo-wrap) .dice-roll-button.is-rolling .ludo-dice{animation:diceShake .12s linear infinite}
+#gameArea:has(.ludo-wrap) .dice-roll-button.is-rolling{transform:translateY(2px);box-shadow:0 1px 0 #8e6b28,0 3px 7px #0005}
+#gameArea:has(.ludo-wrap) .ludo-match-badge{max-width:105px;padding:7px 8px;border:1px solid #4c5a70;border-radius:10px;background:#0a1220;color:#d9e4f5;font-size:8px;font-weight:1000;text-align:center;line-height:1.5}
+#gameArea:has(.ludo-wrap) .ludo-board-frame{max-width:740px;background:#e9dfc6;border:3px solid #b38a4d;border-radius:9px;padding:6px;box-shadow:0 6px 0 #684b2a,0 12px 25px #0005}
+#gameArea:has(.ludo-wrap) .ludo-board-title{color:#604321;font-size:11px;padding:1px 4px 6px}
+#gameArea:has(.ludo-wrap) .ludo-board-title span{color:#765f43}
+#gameArea:has(.ludo-wrap) .ludo-board{width:min(100%,min(68dvh,88vw),650px);border:2px solid #fffdf4;border-radius:2px;gap:0;background:#fffdf4;box-shadow:0 0 0 1px #a78d61;aspect-ratio:1}
+#gameArea:has(.ludo-wrap) .ludo-cell{font-size:clamp(5px,1.15vw,10px);box-shadow:inset 0 0 0 .5px #d4d2c9}
+#gameArea:has(.ludo-wrap) .ludo-cell.track-cell{background:#fffefa;box-shadow:inset 0 0 0 1px #d6d5ce}
+#gameArea:has(.ludo-wrap) .ludo-cell.base-red{background:#df3156!important}
+#gameArea:has(.ludo-wrap) .ludo-cell.base-green{background:#1c9a5b!important}
+#gameArea:has(.ludo-wrap) .ludo-cell.base-yellow{background:#f2c535!important}
+#gameArea:has(.ludo-wrap) .ludo-cell.base-blue{background:#2875dd!important}
+#gameArea:has(.ludo-wrap) .ludo-cell.base-home{background:#fffdf5!important;box-shadow:inset 0 0 0 1px #dedbd1}
+#gameArea:has(.ludo-wrap) .ludo-cell.base-home-dot:after{width:66%;height:66%;background:#fff;border:2px solid #dedbd1;box-shadow:inset 0 0 0 3px #f3f0e8,0 1px 2px #0002}
+#gameArea:has(.ludo-wrap) .ludo-cell.yard-cell{background:#fffdf5!important;box-shadow:inset 0 0 0 1px #dedbd1;z-index:2}
+#gameArea:has(.ludo-wrap) .yard-token{width:76%;height:76%;border:3px solid white;box-shadow:inset 0 0 0 3px #ffffff80,0 2px 4px #0005;font-size:clamp(7px,1.35vw,12px)}
+#gameArea:has(.ludo-wrap) .ludo-cell.red-start{background:#df3156!important}
+#gameArea:has(.ludo-wrap) .ludo-cell.blue-start{background:#2875dd!important}
+#gameArea:has(.ludo-wrap) .ludo-cell.safe-cell{background:#ffe6a0;color:#a66a00}
+#gameArea:has(.ludo-wrap) .ludo-cell.center-home{box-shadow:inset 0 0 0 .5px #fff9}
+#gameArea:has(.ludo-wrap) .ludo-cell.center-red{background:#df3156!important}
+#gameArea:has(.ludo-wrap) .ludo-cell.center-green{background:#1c9a5b!important}
+#gameArea:has(.ludo-wrap) .ludo-cell.center-yellow{background:#f2c535!important}
+#gameArea:has(.ludo-wrap) .ludo-cell.center-blue{background:#2875dd!important}
+#gameArea:has(.ludo-wrap) .ludo-cell.red-lane{background:#f2a1b3!important}
+#gameArea:has(.ludo-wrap) .ludo-cell.blue-lane{background:#a0c7fa!important}
+#gameArea:has(.ludo-wrap) .ludo-cell.green-lane{background:#8dd9ad!important}
+#gameArea:has(.ludo-wrap) .ludo-cell.yellow-lane{background:#ffe18a!important}
+#gameArea:has(.ludo-wrap) .ludo-player{border:1px solid #35455f;background:linear-gradient(145deg,#152139,#0d1525);box-shadow:0 4px 12px #0003}
+#gameArea:has(.ludo-wrap) .token-pick{border:1px solid #ffffff30;box-shadow:0 2px 0 #0003}
+#gameArea:has(.ludo-wrap) .ludo-rules{display:none}
+@keyframes diceShake{0%{transform:rotate(-14deg) scale(.94)}50%{transform:rotate(14deg) scale(1.08)}100%{transform:rotate(-14deg) scale(.94)}}
+@keyframes diceIdle{0%,100%{box-shadow:0 4px 0 #8e6b28,0 7px 12px #0005}50%{box-shadow:0 4px 0 #8e6b28,0 7px 16px #ffd86a45}}
+@media(max-width:600px){
+ #gameArea:has(.ludo-wrap) .ludo-head{grid-template-columns:78px minmax(0,1fr);gap:8px;padding:6px}
+ #gameArea:has(.ludo-wrap) .dice-roll-button{width:78px;min-height:82px}
+ #gameArea:has(.ludo-wrap) .ludo-dice{min-width:42px;min-height:40px;font-size:37px}
+ #gameArea:has(.ludo-wrap) .ludo-match-badge{grid-column:1/-1;justify-self:end;max-width:none;padding:4px 8px}
+ #gameArea:has(.ludo-wrap) .ludo-board-frame{margin:6px auto 5px;padding:4px}
+ #gameArea:has(.ludo-wrap) .ludo-board{width:min(100%,min(88vw,58dvh))}
+ #gameArea:has(.ludo-wrap) .ludo-player{padding:6px 7px;margin-top:5px}
+}
+@media(prefers-reduced-motion:reduce){#gameArea:has(.ludo-wrap) .dice-roll-button:not(:disabled){animation:none}#gameArea:has(.ludo-wrap) .dice-roll-button.is-rolling .ludo-dice{animation:none}}
+
 /* WHOT full-screen table and clearer playable-card feedback */
 body:has(#gameArea .naija-whot-table){overflow:hidden}
 #gameArea:has(.naija-whot-table){position:fixed;inset:0;z-index:1000;width:100%;height:100vh;height:100dvh;max-width:none;margin:0;padding:0;border:0;border-radius:0;overflow-x:hidden;overflow-y:auto;background:#063829;box-shadow:none;overscroll-behavior:contain}
@@ -305,4 +359,4 @@ window.addEventListener("unhandledrejection", function (event) {
   message.textContent = "Startup failed: " + reason;
 });
 </script>
-<script type="module" src="./app.js?v=20261016ludo-fullscreen-nav"></script></body></html>
+<script type="module" src="./app.js?v=20261016naija-ludo-dice"></script></body></html>
