@@ -137,6 +137,20 @@ body:has(#gameArea .naija-whot-table){overflow:hidden}
 @media(max-width:480px){.whot-screen-header{grid-template-columns:auto 1fr auto;padding-left:9px;padding-right:9px}.whot-brandline{justify-self:center}.whot-brandline b{font-size:10px}.whot-brandline small{font-size:7px}.whot-back{padding:8px;font-size:11px}.whot-online{font-size:8px}.naija-whot-table .whot-hand{gap:5px}.naija-whot-table .whot-hand .playingcard{flex:1 1 17%;max-width:74px;min-width:0;height:clamp(94px,28vw,120px)}}
 @media(min-width:700px){#gameArea:has(.naija-whot-table) .naija-whot-table{max-width:1050px;margin:0 auto;min-height:calc(100dvh - 58px);padding:20px 34px}.naija-whot-table .whot-hand{gap:12px}.naija-whot-table .whot-hand .playingcard{max-width:90px}}
 
+
+/* Tap-together randomized WHOT deal */
+.whot-deal-panel{text-align:center;max-width:560px;margin:0 auto;padding:10px 0 18px}
+.whot-deal-panel h2{font-size:clamp(25px,6vw,38px);margin:16px 0 5px;color:#fff3cb}
+.whot-deal-panel .whot-message{font-size:14px}
+.deal-hint,.deal-ready{font-size:12px;line-height:1.6;color:#c8e9db;max-width:360px;margin:10px auto 16px}
+.deal-ready{color:#ffe082;font-weight:800}
+.deal-button{width:min(100%,340px);min-height:56px;border-radius:16px;font-size:14px;letter-spacing:.5px;box-shadow:0 5px 0 #946b18,0 10px 22px #0018}
+.deal-button:disabled{opacity:.8;filter:saturate(.7)}
+.deal-pile{width:100px;min-width:100px;height:138px;min-height:138px;transform:rotate(3deg);background:repeating-linear-gradient(45deg,#811638 0 6px,#a51e47 6px 12px);color:#ffe6aa;border:3px solid #f4d69a;box-shadow:0 6px 0 #422018,0 10px 18px #0018}
+.deal-pile i{font-size:42px;font-style:normal;font-weight:1000;border:2px solid #ffe6aa;border-radius:50%;width:58px;height:58px;display:grid;place-items:center}
+.deal-pile small{font-size:10px;letter-spacing:2px}
+.deal-waiting{color:#ffe082;font-size:10px;font-weight:900;letter-spacing:1px}
+@media(max-width:440px){.deal-pile{width:88px;min-width:88px;height:122px;min-height:122px}.whot-deal-panel{padding-top:4px}}
 </style>
 </head><body>
 <header><div class="brand">Bami <span>&</span> Oluwatosin <span>♥</span></div><div class="status" id="connectionStatus">Connecting…<br>Private couple room</div></header>
@@ -165,4 +179,4 @@ window.addEventListener("unhandledrejection", function (event) {
   message.textContent = "Startup failed: " + reason;
 });
 </script>
-<script type="module" src="./app.js?v=20261016whotfullscreen2"></script></body></html>
+<script type="module" src="./app.js?v=20261016whotdeal3"></script></body></html>
