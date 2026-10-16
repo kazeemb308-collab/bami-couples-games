@@ -157,6 +157,26 @@ body:has(#gameArea .naija-whot-table){overflow:hidden}
 .naija-whot-table .whot-hand .playingcard.cannot-play{transform:none!important;opacity:1!important;filter:none!important;box-shadow:0 5px 0 #9e7847,0 8px 14px #0018!important;border-color:#f7e6c3!important}
 .naija-whot-table .whot-hand .playingcard:not(:disabled):hover,
 .naija-whot-table .whot-hand .playingcard.can-play:active{transform:none!important;box-shadow:0 5px 0 #9e7847,0 8px 14px #0018!important}
+
+/* WHOT refinements: identical card appearance on both phones, no hover clues */
+.naija-whot-table .whot-hand .playingcard,
+.naija-whot-table .whot-hand .playingcard:hover,
+.naija-whot-table .whot-hand .playingcard:active,
+.naija-whot-table .whot-hand .playingcard.can-play,
+.naija-whot-table .whot-hand .playingcard.cannot-play {
+  transform:none!important; opacity:1!important; filter:none!important;
+  border-color:#f7e6c3!important;
+  box-shadow:0 5px 0 #9e7847,0 8px 14px #0018!important;
+}
+.naija-whot-table .whot-hand { margin-top:34px!important; padding-top:10px!important; }
+.naija-whot-table .whot-turn-strip { margin:10px 0 4px; text-align:center; justify-content:center; font-size:12px; }
+.naija-whot-table .whot-turn-strip.not-your-turn { background:#003d2b; color:#f0f4ef; }
+.naija-whot-table .whot-called-shape { margin:10px auto 0; padding:10px 14px; max-width:360px; text-align:center; border-radius:10px; background:#f9d56b; color:#432a0b; font-size:12px; font-weight:900; letter-spacing:.5px; }
+.naija-whot-table .whot-called-shape b { margin-left:5px; font-size:14px; }
+.naija-whot-table .whot-status-message { margin:10px 0 0; text-align:center; color:#d6f1e3; font-size:12px; line-height:1.5; }
+.naija-whot-table .whot-arena { align-items:center; justify-content:center; gap:clamp(24px,10vw,90px); }
+.naija-whot-table .whot-pile { min-width:82px; }
+.naija-whot-table .discard-pile .top-playing-card { transform:none; }
 </style>
 </head><body>
 <header><div class="brand">Bami <span>&</span> Oluwatosin <span>♥</span></div><div class="status" id="connectionStatus">Connecting…<br>Private couple room</div></header>
@@ -185,4 +205,4 @@ window.addEventListener("unhandledrejection", function (event) {
   message.textContent = "Startup failed: " + reason;
 });
 </script>
-<script type="module" src="./app.js?v=20261016no-card-hints"></script></body></html>
+<script type="module" src="./app.js?v=20261016whot-table-update2"></script></body></html>
