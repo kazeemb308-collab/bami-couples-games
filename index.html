@@ -651,7 +651,7 @@ body:has(#gameArea .ludo-wrap) main{width:100%;max-width:none;padding:0!importan
 @media(max-width:420px){.snakes-score>div{padding:8px 6px;gap:5px}.snakes-score b,.snakes-score strong{font-size:10px}.snakes-dice-panel{padding:8px;gap:9px}.snakes-roll{width:64px;height:64px;flex-basis:64px}.snakes-roll span{font-size:27px}.snakes-turn{font-size:12px}.snake-square{padding:2px 0}.snakes-board{gap:1px;padding:3px}}
 
 /* Dedicated full-screen Tic-Tac-Toe table */
-body:has(.ttt-screen){overflow:hidden}
+body:has(#gameArea:not(.hidden) .ttt-screen){overflow:hidden}
 #gameArea:has(.ttt-screen){position:fixed;inset:0;z-index:1000;width:100%;height:100vh;height:100dvh;max-width:none;margin:0;padding:0;border:0;border-radius:0;overflow:auto;background:radial-gradient(ellipse at top,#252d55 0%,#0a0d1d 68%);overscroll-behavior:contain}
 #gameArea:has(.ttt-screen)>.actions,#gameArea:has(.ttt-screen)>.eyebrow,#gameArea:has(.ttt-screen)>h2,#gameArea:has(.ttt-screen)>p,#gameArea:has(.ttt-screen)>.overall-scoreboard{display:none}
 .ttt-screen{min-height:100%;min-height:100dvh;width:100%;max-width:850px;margin:auto;padding:max(10px,env(safe-area-inset-top)) clamp(12px,3vw,26px) max(14px,env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:clamp(12px,2.5vh,22px)}
