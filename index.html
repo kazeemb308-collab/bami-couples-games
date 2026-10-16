@@ -649,6 +649,31 @@ body:has(#gameArea .ludo-wrap) main{width:100%;max-width:none;padding:0!importan
 #gameArea:has(.snakes-wrap) .whot-screen-header{position:sticky;top:0;z-index:4}#gameArea:has(.snakes-wrap) .snakes-board{width:min(100%,min(84vw,58dvh))}
 @media(min-width:650px){#gameArea:has(.snakes-wrap) .snakes-board{width:min(100%,min(64vw,70dvh))}}
 @media(max-width:420px){.snakes-score>div{padding:8px 6px;gap:5px}.snakes-score b,.snakes-score strong{font-size:10px}.snakes-dice-panel{padding:8px;gap:9px}.snakes-roll{width:64px;height:64px;flex-basis:64px}.snakes-roll span{font-size:27px}.snakes-turn{font-size:12px}.snake-square{padding:2px 0}.snakes-board{gap:1px;padding:3px}}
+
+/* Dedicated full-screen Tic-Tac-Toe table */
+body:has(.ttt-screen){overflow:hidden}
+#gameArea:has(.ttt-screen){position:fixed;inset:0;z-index:1000;width:100%;height:100vh;height:100dvh;max-width:none;margin:0;padding:0;border:0;border-radius:0;overflow:auto;background:radial-gradient(ellipse at top,#252d55 0%,#0a0d1d 68%);overscroll-behavior:contain}
+#gameArea:has(.ttt-screen)>.actions,#gameArea:has(.ttt-screen)>.eyebrow,#gameArea:has(.ttt-screen)>h2,#gameArea:has(.ttt-screen)>p,#gameArea:has(.ttt-screen)>.overall-scoreboard{display:none}
+.ttt-screen{min-height:100%;min-height:100dvh;width:100%;max-width:850px;margin:auto;padding:max(10px,env(safe-area-inset-top)) clamp(12px,3vw,26px) max(14px,env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:clamp(12px,2.5vh,22px)}
+.ttt-topbar{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px}
+.ttt-back{justify-self:start;padding:9px 12px;white-space:nowrap}
+.ttt-title{display:flex;align-items:center;gap:8px;white-space:nowrap}
+.ttt-title>span{font-size:27px}.ttt-title b,.ttt-title small{display:block}.ttt-title b{font-size:clamp(12px,2.5vw,17px);letter-spacing:1px}.ttt-title small{font-size:8px;letter-spacing:1.5px;color:#a7b0ca;margin-top:3px}
+.ttt-live{justify-self:end;color:#8ee8c2;font-size:10px;font-weight:900;white-space:nowrap}
+.ttt-score-row{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:8px}
+.ttt-player-card{display:flex;align-items:center;gap:8px;min-width:0;padding:11px 10px;background:#151b30;border:1px solid #303958;border-radius:15px;transition:border-color .15s,background .15s}
+.ttt-player-card.active{border-color:#63e6ff;background:#192744;box-shadow:0 0 0 1px #63e6ff33}
+.ttt-player-card>div{min-width:0;flex:1}.ttt-player-card small,.ttt-player-card b{display:block}.ttt-player-card small{font-size:9px;color:#a7b0ca;font-weight:800;letter-spacing:1px}.ttt-player-card b{font-size:clamp(11px,2.7vw,15px);overflow-wrap:anywhere;margin-top:3px}.ttt-player-card strong{font-size:clamp(18px,4vw,25px);color:#ffd166}
+.ttt-mark{display:grid;place-items:center;width:35px;height:35px;flex:0 0 35px;border-radius:10px;font-size:21px;font-weight:1000;background:#0a1022}.x-mark,.x-cell{color:#63e6ff}.o-mark,.o-cell{color:#ff579f}.ttt-score-divider{font-size:10px;color:#a7b0ca;font-weight:1000}
+.ttt-turn-banner{display:flex;align-items:center;gap:12px;padding:12px 15px;border-radius:14px;border:1px solid #354366;background:#111a30}
+.ttt-turn-dot{width:11px;height:11px;border-radius:50%;background:#63e6ff;box-shadow:0 0 0 5px #63e6ff20;flex:0 0 auto}.ttt-turn-banner small,.ttt-turn-banner b{display:block}.ttt-turn-banner small{font-size:9px;color:#a7b0ca;letter-spacing:1.5px;font-weight:900}.ttt-turn-banner b{font-size:clamp(14px,3.4vw,19px);margin-top:3px}.ttt-turn-banner.finished .ttt-turn-dot{background:#ffd166;box-shadow:0 0 0 5px #ffd16620}
+.ttt-board{width:min(100%,min(58vh,74vw),480px);width:min(100%,min(52dvh,78vw),480px);aspect-ratio:1;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(7px,1.8vw,12px);margin:0 auto;flex:0 0 auto}
+.ttt-cell{min-width:0;aspect-ratio:1;border-radius:clamp(13px,3vw,22px);border:1px solid #354263;background:linear-gradient(145deg,#1b2440,#10172b);color:#fff;font-size:clamp(48px,15vw,92px);font-weight:950;display:grid;place-items:center;padding:0;touch-action:manipulation;-webkit-tap-highlight-color:transparent;box-shadow:0 5px 0 #060914,0 9px 18px #0003}
+.ttt-cell:not(:disabled):active{transform:scale(.96);background:#263454}.ttt-cell:disabled{opacity:1}.ttt-cell.x-cell{background:linear-gradient(145deg,#172e45,#111b31);text-shadow:0 0 22px #63e6ff33}.ttt-cell.o-cell{background:linear-gradient(145deg,#3c1b3a,#20142e);text-shadow:0 0 22px #ff579f33}
+.ttt-bottom{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;color:#a7b0ca;font-size:12px}.ttt-bottom button{white-space:nowrap}
+@media(max-width:440px){.ttt-screen{gap:clamp(10px,2vh,16px);padding-left:10px;padding-right:10px}.ttt-topbar{grid-template-columns:auto 1fr auto;gap:5px}.ttt-back{font-size:11px;padding:9px 8px}.ttt-title{gap:4px}.ttt-title>span{font-size:20px}.ttt-title b{font-size:10px;letter-spacing:.5px}.ttt-title small{font-size:6px;letter-spacing:.8px}.ttt-live{font-size:8px}.ttt-player-card{gap:6px;padding:9px 6px;border-radius:12px}.ttt-mark{width:29px;height:29px;flex-basis:29px;font-size:18px}.ttt-player-card small{font-size:7px}.ttt-player-card b{font-size:11px}.ttt-player-card strong{font-size:19px}.ttt-board{width:min(100%,min(47vh,86vw),440px);width:min(100%,min(47dvh,86vw),440px)}.ttt-turn-banner{padding:10px 12px}.ttt-bottom{font-size:10px}.ttt-bottom button{padding:10px 12px}}
+@media(max-height:700px){.ttt-screen{gap:9px}.ttt-board{width:min(100%,min(43dvh,72vw),400px)}.ttt-player-card{padding:7px}.ttt-turn-banner{padding:8px 12px}}
+
 </style>
 </head><body>
 <header><div class="brand">Bami <span>&</span> Oluwatosin <span>♥</span></div><div class="status" id="connectionStatus">Connecting…<br>Private couple room</div></header>
