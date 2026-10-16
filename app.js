@@ -227,6 +227,20 @@ function renderLudoBoard(g){
  }
  return out+'</div>';
 }
+function finishedGameInfo(s){
+ const key=activeGame==="whot"?"whot":activeGame==="ludo"?"ludo":activeGame==="ttt"?"ttt":null;
+ if(!key)return null;
+ const g=s[key];if(!g)return null;
+ if(g.winner)return {key,winner:g.winner,draw:false};
+ if(key==="ttt"&&g.moves>=9)return {key,winner:"",draw:true};
+ return null;
+}
+function resetFinishedGame(s,key){
+ if(key==="whot")s.whot=newWhot();
+ else if(key==="ludo")s.ludo=newLudo();
+ else if(key==="ttt")s.ttt={cells:Array(9).fill(""),turn:"X",winner:"",moves:0};
+ s.rematchVotes=[];
+}
 function renderGame(){
  if(!room)return;const s=room.state,waiting=room.players.length<2?"Waiting for your partner to join…":"Playing with "+(room.players[1-me()]||{}).name;
  let h=activeGame==="whot"?'<div class="whot-screen-header"><button id="backToGames" class="whot-back">← Games</button><div class="whot-brandline"><span>🃏</span><span><b>NAIJA WHOT</b><small>BAMI ♥ OLUWATOSIN</small></span></div><div class="whot-online">'+(room.players.length<2?'WAITING…':'● 2 PLAYERS')+'</div></div>':'<div class="actions"><button id="backToGames" class="secondary">← All games</button></div><div class="eyebrow">NOW PLAYING</div><h2>'+({whot:"🃏 WHOT!",ludo:"🎲 Ludo",ttt:"⭕ Tic-Tac-Toe",quiz:"💗 Couples Quiz",truth:"🔥 Truth or Dare"}[activeGame])+'</h2><p class="muted">'+esc(waiting)+'</p>';
@@ -242,9 +256,24 @@ function renderGame(){
  if(activeGame==="truth"){
   const turnName=myName(s.truth.turn);h+='<div class="quizcard center"><div class="muted">'+turnName+'’s turn</div><h3>'+esc(s.truth.prompt)+'</h3><button id="truthBtn" class="pink" '+(s.truth.turn!==me()||room.players.length<2?'disabled':'')+'>💗 Truth</button> <button id="dareBtn" class="gold" '+(s.truth.turn!==me()||room.players.length<2?'disabled':'')+'>🔥 Dare</button><p><button id="nextTruth" class="secondary" '+(s.truth.turn!==me()||room.players.length<2?'disabled':'')+'>Next turn ↻</button></p><p class="notice">Skip anything uncomfortable. Kindness first ❤️</p></div>';
  }
+ const finished=finishedGameInfo(s);
+ if(finished){
+  const p=me(),votes=Array.isArray(s.rematchVotes)?s.rematchVotes:[],alreadyVoted=votes.includes(p);
+  const isWinner=!finished.draw&&room.players[p]?.name===finished.winner;
+  const result=finished.draw?"GAME OVER! 🤝 IT’S A DRAW":isWinner?"GAME OVER! 🎉 YOU WIN!":"GAME OVER! ❌ YOU LOST";
+  h+='<div class="rematch-panel"><div class="rematch-result">'+result+'</div><p>'+(finished.draw?'Nobody won this round. Play again?':esc(finished.winner)+' won the match!')+'</p><button id="rematchButton" class="pink" '+(alreadyVoted?'disabled':'')+'>'+(alreadyVoted?'✓ Rematch requested':'↻ Rematch')+'</button><div class="rematch-waiting">'+votes.length+' of 2 players ready'+(alreadyVoted?' · Waiting for your partner…':' · Both players must press Rematch')+'</div></div>';
+ }
  $("gameArea").innerHTML=h;wireGame();
 }
 function wireGame(){
+ const rematch=$( "rematchButton" );
+ if(rematch)rematch.onclick=()=>change(s=>{
+  const finished=finishedGameInfo(s);if(!finished)return;
+  const votes=Array.isArray(s.rematchVotes)?s.rematchVotes:[];
+  if(!votes.includes(me()))votes.push(me());
+  s.rematchVotes=votes;
+  if(s.rematchVotes.includes(0)&&s.rematchVotes.includes(1))resetFinishedGame(s,finished.key);
+ });
  document.querySelectorAll("[data-cell]").forEach(b=>b.onclick=()=>change(s=>{const g=s.ttt,i=+b.dataset.cell,mark=me()===0?"X":"O",lines=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];if(g.cells[i]||g.winner||g.turn!==mark||room.players.length<2)return;g.cells[i]=mark;g.moves++;if(lines.some(l=>l.every(n=>g.cells[n]===mark)))g.winner=room.players[me()].name;else g.turn=mark==="X"?"O":"X";}));
  const back=$("backToGames");if(back)back.onclick=()=>{gameOpen=false;const picker=document.querySelector(".games"),area=$("gameArea");picker.classList.remove("hidden");area.classList.add("hidden");picker.scrollIntoView({behavior:"smooth",block:"start"});};
  const rt=$("resetTtt");if(rt)rt.onclick=()=>change(s=>{s.ttt={cells:Array(9).fill(""),turn:"X",winner:"",moves:0};});
