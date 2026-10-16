@@ -17,7 +17,7 @@ function playerName(){return $("playerName").value.trim().slice(0,24)||"Player";
 function roomCode(){return Math.random().toString(36).slice(2,8).toUpperCase();}
 function configOK(){return firebaseConfig.apiKey&&!firebaseConfig.apiKey.includes("PASTE_")&&firebaseConfig.projectId&&!firebaseConfig.projectId.includes("PASTE_")&&firebaseConfig.appId&&!firebaseConfig.appId.includes("PASTE_");}
 function deck(){const a=[];for(let s=0;s<5;s++)for(let n=1;n<=14;n++)a.push({s,n});for(let n=1;n<=5;n++)a.push({s:5,n});for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
-function newWhot(){const d=deck();return {deck:d.slice(10),hands:[d.slice(0,5),d.slice(5,10)],top:d[10],turn:0,winner:"",message:"Match the shape or number."};}
+function newWhot(){const d=deck();return {deck:d.slice(10),hands:{0:d.slice(0,5),1:d.slice(5,10)},top:d[10],turn:0,winner:"",message:"Match the shape or number."};}
 function initialState(){return {ttt:{cells:Array(9).fill(""),turn:"X",winner:"",moves:0},whot:newWhot(),ludo:{positions:[0,0],turn:0,dice:null,winner:"",message:"Roll the dice and race to 20."},quiz:{index:0,answers:[],scores:[0,0]},truth:{turn:0,prompt:"Choose Truth or Dare to begin."}};}
 function me(){return room?room.players.findIndex(p=>p.id===playerId):-1;}
 async function init(){
