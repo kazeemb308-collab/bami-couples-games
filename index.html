@@ -587,6 +587,19 @@ body:has(#gameArea .ludo-wrap) main{width:100%;max-width:none;padding:0!importan
 .game-score-strip.ludo-score-strip{margin-top:0}
 @media(max-width:420px){.game-score-strip{gap:5px;padding:8px 5px;font-size:11px}.game-score-strip b{gap:4px}}
 
+
+/* Large, familiar dice icon before the first roll */
+#gameArea:has(.ludo-wrap) .center-dice-button{gap:0;padding:0;border-radius:9px;overflow:visible}
+#gameArea:has(.ludo-wrap) .center-dice-button .initial-dice-emoji{
+ display:block;font-family:Apple Color Emoji,Segoe UI Emoji,Noto Color Emoji,sans-serif;
+ font-size:clamp(25px,5.4vw,49px);line-height:1.08;filter:drop-shadow(0 3px 2px #0005);
+ transform:scale(1.12);margin-bottom:2px
+}
+#gameArea:has(.ludo-wrap) .center-dice-button.ready .initial-dice-emoji{animation:diceEmojiIdle 1.15s ease-in-out infinite}
+#gameArea:has(.ludo-wrap) .center-dice-button small{font-size:clamp(5px,1vw,8px);line-height:1.1;font-weight:1000;letter-spacing:.45px}
+@keyframes diceEmojiIdle{0%,100%{transform:scale(1.08) rotate(-4deg)}50%{transform:scale(1.2) rotate(5deg)}}
+@media(max-width:600px){#gameArea:has(.ludo-wrap) .center-dice-button .initial-dice-emoji{font-size:clamp(26px,7vw,42px)}}
+
 </style>
 </head><body>
 <header><div class="brand">Bami <span>&</span> Oluwatosin <span>♥</span></div><div class="status" id="connectionStatus">Connecting…<br>Private couple room</div></header>
@@ -615,4 +628,4 @@ window.addEventListener("unhandledrejection", function (event) {
   message.textContent = "Startup failed: " + reason;
 });
 </script>
-<script type="module" src="./app.js?v=20261016turn-scores-rematch1"></script></body></html>
+<script type="module" src="./app.js?v=20261016dice-emoji1"></script></body></html>
