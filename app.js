@@ -160,6 +160,7 @@ function initPoolCanvas(initial){
   if(!current.ballInHand||current.turn!==me()||current.winner||current.phase!=="ready"||room.players.length<2)return;
   e.preventDefault();const p=point(e),cue=local.balls.find(b=>b.id===0&&!b.pocketed);if(!cue)return;
   cue.x=Math.max(.04,Math.min(.96,(p.x-m)/tw));cue.y=Math.max(.04,Math.min(.96,(p.y-m)/th));local.placed=true;draw();
+  const x=cue.x,y=cue.y;change(s=>{const g=s.pool;if(g.turn!==me()||!g.ballInHand||g.phase!=="ready")return;const c=g.balls.find(b=>b.id===0);if(c){c.x=x;c.y=y;c.vx=0;c.vy=0;g.ballInHand=false;g.message="Cue ball placed. Aim and shoot.";}});local.placed=false;
  };
  canvas.onpointermove=()=>{};
  canvas.onpointerup=()=>{};
