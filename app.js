@@ -106,16 +106,25 @@ function initPoolCanvas(initial){
   ctx.beginPath();ctx.arc(x,y,r*.43,0,Math.PI*2);ctx.fillStyle="#fff";ctx.fill();
   ctx.fillStyle="#111827";ctx.font="bold "+Math.max(9,Math.round(r*.82))+"px Arial";ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(String(b.id),x,y+.5);
  });
- if(local.aiming){
+ {
   const cue=local.balls.find(b=>b.id===0&&!b.pocketed);
-  if(cue){
-   const cx=m+cue.x*tw,cy=m+cue.y*th,dx=local.px-cx,dy=local.py-cy,len=Math.hypot(dx,dy)||1,ux=dx/len,uy=dy/len;
-   ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(local.px,local.py);ctx.setLineDash([7,7]);ctx.strokeStyle="#f9ffffcc";ctx.lineWidth=2;ctx.stroke();ctx.setLineDash([]);
-   // Cue stick, with a dark butt and pale wooden shaft.
-   const bx=cx-ux*28,by=cy-uy*28,ex=local.px-ux*115,ey=local.py-uy*115;
-   ctx.lineCap="round";ctx.beginPath();ctx.moveTo(bx,by);ctx.lineTo(ex,ey);ctx.strokeStyle="#1c2028";ctx.lineWidth=8;ctx.stroke();
-   ctx.beginPath();ctx.moveTo(bx,by);ctx.lineTo(ex,ey);ctx.strokeStyle="#d9b77b";ctx.lineWidth=4;ctx.stroke();
-   ctx.beginPath();ctx.moveTo(bx,by);ctx.lineTo(bx-ux*13,by-uy*13);ctx.strokeStyle="#7a3522";ctx.lineWidth=8;ctx.stroke();
+  const canAim=initial.turn===me()&&!initial.winner&&initial.phase==="ready";
+  if(cue&&(local.aiming||canAim)){
+   const cx=m+cue.x*tw,cy=m+cue.y*th;
+   // Keep a usable cue stick visible before the player touches the table.
+   // While aiming, the pointer defines the shot direction; otherwise aim at the rack.
+   let dx=local.aiming?local.px-cx:tw*.42;
+   let dy=local.aiming?local.py-cy:0;
+   const len=Math.hypot(dx,dy)||1,ux=dx/len,uy=dy/len;
+   const aimLen=local.aiming?Math.max(90,Math.min(260,len)):190;
+   const ax=cx+ux*aimLen,ay=cy+uy*aimLen;
+   ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(ax,ay);ctx.setLineDash([7,7]);ctx.strokeStyle="#f9ffffcc";ctx.lineWidth=2;ctx.stroke();ctx.setLineDash([]);
+   // Cue stick: visible at rest, with a dark butt and pale wooden shaft.
+   const bx=cx-ux*28,by=cy-uy*28,ex=cx-ux*(local.aiming?Math.max(150,len+75):190),ey=cy-uy*(local.aiming?Math.max(150,len+75):190);
+   ctx.lineCap="round";ctx.beginPath();ctx.moveTo(bx,by);ctx.lineTo(ex,ey);ctx.strokeStyle="#111722";ctx.lineWidth=12;ctx.stroke();
+   ctx.beginPath();ctx.moveTo(bx,by);ctx.lineTo(ex,ey);ctx.strokeStyle="#d9b77b";ctx.lineWidth=7;ctx.stroke();
+   ctx.beginPath();ctx.moveTo(bx,by);ctx.lineTo(bx-ux*13,by-uy*13);ctx.strokeStyle="#7a3522";ctx.lineWidth=11;ctx.stroke();
+   ctx.beginPath();ctx.arc(cx,cy,16,0,Math.PI*2);ctx.strokeStyle="#ffffff88";ctx.lineWidth=2;ctx.stroke();
   }
  }
  };
