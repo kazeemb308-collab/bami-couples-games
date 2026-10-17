@@ -1,6 +1,6 @@
 let initializeApp, getAuth, signInAnonymously, getFirestore, doc, setDoc, getDoc, onSnapshot, runTransaction, serverTimestamp, firebaseConfig;
 const $ = id => document.getElementById(id);
-let db = null, auth = null, roomId = null, playerId = null, room = null, unsubscribe = null, activeGame = "whot", gameOpen = false, gameLaunchId = null, roomSnapshotInitialized = false;
+let db = null, auth = null, roomId = null, playerId = null, room = null, unsubscribe = null, activeGame = "whot", gameOpen = false, gameLaunchId = null, roomSnapshotInitialized = false, botThinking = false;
 const shapeNames = ["Circle","Triangle","Cross","Square","Star"];
 const shapeGlyphs = ["○","△","×","□","☆"];
 const whotNumbers = [1,2,3,4,5,7,8,10,11,12,13,14];
@@ -217,7 +217,7 @@ async function createRoom(){
 async function joinRoom(){
  if(!db||!auth?.currentUser)return say("Firebase is still connecting. Please wait a moment and try again.");
  const c=$("roomInput").value.trim().toUpperCase();if(!/^[A-Z0-9]{6}$/.test(c))return say("Enter the 6-character room code.");
- try{const wantedName=playerName();playerId=crypto.randomUUID();await runTransaction(db,async tx=>{const ref=doc(db,"coupleRooms",c),snap=await tx.get(ref);if(!snap.exists())throw Error("Room not found. Check the code.");const data=snap.data(),players=Array.isArray(data.players)?data.players:[];const sameSeat=players.findIndex(p=>String(p.name||"").trim().toLowerCase()===wantedName.toLowerCase());if(sameSeat>=0){const updated=players.slice();updated[sameSeat]={...updated[sameSeat],id:playerId,name:wantedName,lastReconnectedAt:Date.now()};tx.update(ref,{players:updated});return;}if(players.length>=2)throw Error("This room already has two players. To return to your own seat, enter the exact name you used before.");tx.update(ref,{players:players.concat([{id:playerId,name:wantedName,joinedAt:Date.now()}])});});saveSession({roomId:c,playerId,name:wantedName,autoResume:true});enterRoom(c);}
+ try{const wantedName=playerName();playerId=crypto.randomUUID();await runTransaction(db,async tx=>{const ref=doc(db,"coupleRooms",c),snap=await tx.get(ref);if(!snap.exists())throw Error("Room not found. Check the code.");const data=snap.data(),players=Array.isArray(data.players)?data.players:[];if(players.length===2&&players[1]?.isBot){tx.update(ref,{players:[players[0],{id:playerId,name:wantedName,joinedAt:Date.now()}]});return;}const sameSeat=players.findIndex(p=>String(p.name||"").trim().toLowerCase()===wantedName.toLowerCase());if(sameSeat>=0){const updated=players.slice();updated[sameSeat]={...updated[sameSeat],id:playerId,name:wantedName,lastReconnectedAt:Date.now()};tx.update(ref,{players:updated});return;}if(players.length>=2)throw Error("This room already has two players. To return to your own seat, enter the exact name you used before.");tx.update(ref,{players:players.concat([{id:playerId,name:wantedName,joinedAt:Date.now()}])});});saveSession({roomId:c,playerId,name:wantedName,autoResume:true});enterRoom(c);}
  catch(e){say(e.message);}
 }
 function enterRoom(c){
@@ -479,7 +479,7 @@ function renderGame(){
   const result=finished.draw?"GAME OVER! 🤝 IT’S A DRAW":isWinner?"GAME OVER! 🎉 YOU WIN!":"GAME OVER! ❌ YOU LOST";
   h+='<div class="rematch-overlay" role="dialog" aria-modal="true" aria-label="Game over"><div class="rematch-panel"><div class="rematch-result">'+result+'</div><p>'+(finished.draw?'Nobody won this round. Play again?':esc(finished.winner)+' won the match!')+'</p><button id="rematchButton" class="pink" '+(alreadyVoted?'disabled':'')+'>'+(alreadyVoted?'✓ Rematch requested':'↻ Rematch')+'</button><div class="rematch-waiting">'+votes.length+' of 2 players ready'+(alreadyVoted?' · Waiting for your partner…':' · Both players must press Rematch')+'</div></div></div>';
  }
- $("gameArea").innerHTML=h;wireGame();
+ $("gameArea").innerHTML=h;wireGame();scheduleComputerTurn();
 }
 function wireGame(){
  const rematch=$( "rematchButton" );
@@ -514,7 +514,50 @@ document.querySelectorAll("[data-ludo-die]").forEach(b=>b.onclick=()=>change(s=>
  const dbtn=$("dareBtn");if(dbtn)dbtn.onclick=()=>change(s=>{if(s.truth.turn!==me())return;s.truth.prompt=dares[Math.floor(Math.random()*dares.length)];});
  const nt=$("nextTruth");if(nt)nt.onclick=()=>change(s=>{if(s.truth.turn!==me())return;s.truth.turn=1-s.truth.turn;s.truth.prompt="Choose Truth or Dare to begin.";});
 }
-$("createRoom").onclick=createRoom;$("joinRoom").onclick=joinRoom;
+
+async function addComputer(){
+ if(!db||!roomId||!room||room.players.length!==1)return;
+ try{await runTransaction(db,async tx=>{const ref=doc(db,"coupleRooms",roomId),snap=await tx.get(ref);if(!snap.exists())throw Error("Room not found.");const d=snap.data(),players=Array.isArray(d.players)?d.players:[];if(players.length!==1)throw Error("Someone has already joined this room.");tx.update(ref,{players:players.concat([{id:"computer-opponent",name:"Computer",isBot:true,joinedAt:Date.now()}])});});say("Computer opponent added. Your partner can still join using this room code.");}
+ catch(e){say("Could not add computer: "+e.message);}
+}
+function scheduleComputerTurn(){
+ if(botThinking||!room||!room.players[1]?.isBot||me()!==0||!gameOpen)return;
+ const s=room.state;if(!s)return;let should=false;
+ if(activeGame==="ttt")should=!s.ttt.winner&&s.ttt.moves<9&&s.ttt.turn==="O";
+ else if(activeGame==="snakes")should=!s.snakes.winner&&s.snakes.turn===1;
+ else if(activeGame==="ayo")should=!s.ayo.winner&&s.ayo.turn===1;
+ else if(activeGame==="pool")should=!s.pool.winner&&s.pool.turn===1&&s.pool.phase==="ready";
+ else if(activeGame==="whot")should=!s.whot.winner&&(s.whot.turn===1||!s.whot.dealt||s.whot.pendingShapePlayer===1);
+ else if(activeGame==="ludo")should=!s.ludo.winner&&s.ludo.turn===1;
+ else if(activeGame==="quiz")should=s.quiz.answers[0]!==undefined&&s.quiz.answers[1]===undefined;
+ else if(activeGame==="truth")should=s.truth.turn===1;
+ if(!should)return;botThinking=true;
+ setTimeout(async()=>{
+  try{await change(st=>{
+   const pick=a=>a[Math.floor(Math.random()*a.length)];
+   if(activeGame==="ttt"){
+    const g=st.ttt,mark="O",lines=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+    let choice=-1;for(const m of ["O","X"]){for(let i=0;i<9;i++)if(!g.cells[i]){g.cells[i]=m;const wins=lines.some(l=>l.every(n=>g.cells[n]===m));g.cells[i]="";if(wins){choice=i;break;}}if(choice>=0)break;}
+    if(choice<0){const empty=g.cells.map((v,i)=>v? -1:i).filter(i=>i>=0);choice=pick(empty);}if(choice>=0){g.cells[choice]=mark;g.moves++;if(lines.some(l=>l.every(n=>g.cells[n]===mark)))g.winner="Computer";else g.turn="X";}
+   }else if(activeGame==="snakes"){
+    const g=st.snakes,roll=1+Math.floor(Math.random()*6);g.dice=roll;let next=g.positions[1];if(next+roll>100){g.message="Computer needs an exact roll to reach 100.";g.turn=0;return;}next+=roll;if(SNAKE_LADDERS[next])next=SNAKE_LADDERS[next];g.positions[1]=next;if(next===100){g.winner="Computer";g.message="Computer wins Snake and Ladder!";}else if(roll!==6)g.turn=0;g.message="Computer rolled "+roll+" and moved to "+next+".";
+   }else if(activeGame==="ayo"){
+    const g=st.ayo,moves=ayoLegalMoves(g,1);if(moves.length)playAyo(g,pick(moves),1);
+   }else if(activeGame==="pool"){
+    const g=st.pool,cue=g.balls.find(b=>b.id===0&&!b.pocketed);if(!cue)return;const angle=Math.random()*Math.PI*2,speed=.012+Math.random()*.025;cue.vx=Math.cos(angle)*speed;cue.vy=Math.sin(angle)*speed;g.phase="rolling";g.shots++;g.shotPocketed=g.balls.filter(b=>b.pocketed).map(b=>b.id);g.message="Computer takes the shot.";
+   }else if(activeGame==="whot"){
+    const g=st.whot;if(!g.dealt){dealWhot(g);return;}if(g.pendingShapePlayer===1&&g.pendingShapeIndex!==null){playWhotCard(g,1,g.pendingShapeIndex,Math.floor(Math.random()*5));return;}if(g.turn!==1)return;
+    const hand=g.hands["1"]||[],idx=hand.findIndex(c=>whotCanPlay(c,g));if(idx>=0){if(hand[idx].s===5){playWhotCard(g,1,idx,Math.floor(Math.random()*5));}else playWhotCard(g,1,idx);}else{const c=drawWhotCard(g);if(c)hand.push(c);g.turn=0;g.message="Computer picked a card. Your turn.";}
+   }else if(activeGame==="ludo"){
+    const g=st.ludo;ensureLudoState(g);if(!Array.isArray(g.rolls)){const a=1+Math.floor(Math.random()*6),b=1+Math.floor(Math.random()*6);g.rolls=[a,b];g.roll=g.rolls;g.usedDice=[false,false];g.lastRoll=g.rolls;g.selectedDie=null;g.dice=null;}
+    let moved=false;for(let i=0;i<2&&!moved;i++){if(g.usedDice[i])continue;g.dice=g.rolls[i];const legal=ludoLegalTokens(g,1);if(legal.length){const mv=pick(legal);g.selectedDie=i;moveLudo(g,1,mv.colour,mv.token);moved=true;}else g.usedDice[i]=true;}
+    if(!moved){const extra=g.rolls[0]===6&&g.rolls[1]===6;g.roll=null;g.rolls=null;g.usedDice=[false,false];g.dice=null;if(!extra)g.turn=0;else g.message="Computer rolled double six and rolls again.";}
+   }else if(activeGame==="quiz"){st.quiz.answers[1]=Math.floor(Math.random()*4);}
+   else if(activeGame==="truth"){st.truth.prompt=pick(truths.concat(dares));st.truth.turn=0;}
+  });}finally{botThinking=false;}
+ },650);
+}
+\n$("createRoom").onclick=createRoom;$("joinRoom").onclick=joinRoom;const playComputer=$("playComputer");if(playComputer)playComputer.onclick=addComputer;
 function returnToGamePicker(ev){
  if(ev){ev.preventDefault();ev.stopPropagation();if(ev.stopImmediatePropagation)ev.stopImmediatePropagation();}
  gameOpen=false;
