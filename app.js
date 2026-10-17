@@ -557,7 +557,8 @@ function scheduleComputerTurn(){
   });}finally{botThinking=false;scheduleComputerTurn();}
  },650);
 }
-\n$("createRoom").onclick=createRoom;$("joinRoom").onclick=joinRoom;const playComputer=$("playComputer");if(playComputer)playComputer.onclick=addComputer;
+
+$("createRoom").onclick=createRoom;$("joinRoom").onclick=joinRoom;const playComputer=$("playComputer");if(playComputer)playComputer.onclick=addComputer;
 function returnToGamePicker(ev){
  if(ev){ev.preventDefault();ev.stopPropagation();if(ev.stopImmediatePropagation)ev.stopImmediatePropagation();}
  gameOpen=false;
