@@ -261,8 +261,9 @@ function playWhotCard(g,p,i,chosenShape){
  const opponent=1-p;
  if(oldPenalty){
   if(c.n===oldPenalty.type){
-   g.pendingPenalty=null;g.turn=opponent;
-   g.message=room.players[p].name+" blocked the Pick "+(oldPenalty.type===2?"Two":"Three")+"! Penalty cancelled.";
+   // Same Pick Two/Three passes the same penalty onward; no stacking extra cards.
+   g.pendingPenalty={type:oldPenalty.type,amount:oldPenalty.amount,player:opponent};g.turn=opponent;
+   g.message=room.players[p].name+" passed the Pick "+(oldPenalty.type===2?"Two":"Three")+" on. "+room.players[opponent].name+" must defend with the same card or pick "+oldPenalty.amount+".";
   }else{
    g.pendingPenalty={type:oldPenalty.type,amount:oldPenalty.amount,player:opponent};g.turn=opponent;
    g.message=room.players[p].name+" did not block the penalty. Pick "+oldPenalty.amount+" remains for the next player.";
