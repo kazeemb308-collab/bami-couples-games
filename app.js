@@ -64,7 +64,7 @@ function renderPool(g){g=ensurePool(g);const p=me(),canShoot=g.turn===p&&!g.winn
 function shootPool(g,dx,dy){g=ensurePool(g);if(g.winner||g.turn!==me()||g.phase!=="ready")return;const cue=g.balls.find(b=>b.id===0&&!b.pocketed);if(!cue)return;const len=Math.hypot(dx,dy)||1,speed=Math.min(.045,Math.max(.006,len*.00008));cue.vx=dx/len*speed;cue.vy=dy/len*speed;g.phase="rolling";g.shots++;g.shotPocketed=g.balls.filter(b=>b.pocketed).map(b=>b.id);g.ballInHand=false;g.message=room.players[me()].name+" takes the shot.";}
 function settlePool(g){if(g.phase!=="rolling")return;const previous=g.shotPocketed||[],pocketed=g.balls.filter(b=>b.pocketed&&!previous.includes(b.id)),objects=pocketed.filter(b=>b.id!==0&&b.id!==8),cue=g.balls.find(b=>b.id===0);if(g.groups[0]==="OPEN"&&objects.length){const first=objects[0],grp=first.kind==="stripe"?"STRIPES":"SOLIDS";g.groups[g.turn]=grp;g.groups[1-g.turn]=grp==="SOLIDS"?"STRIPES":"SOLIDS";}const scratched=!!cue?.pocketed;if(scratched){cue.pocketed=false;cue.x=.24;cue.y=.5;cue.vx=cue.vy=0;g.ballInHand=true;g.message="Foul: cue ball scratched. Your opponent gets ball in hand.";g.turn=1-g.turn;}const eight=g.balls.find(b=>b.id===8);if(eight?.pocketed){const grp=g.groups[g.turn],left=g.balls.some(b=>!b.pocketed&&b.id!==0&&b.id!==8&&grp!=="OPEN"&&(grp==="SOLIDS"?b.kind==="solid":b.kind==="stripe"));g.winner=grp!=="OPEN"&&!left?room.players[g.turn].name:room.players[1-g.turn].name;g.message=g.winner===room.players[g.turn].name?"Eight ball legally pocketed — "+g.winner+" wins!":"Eight ball pocketed too early — "+g.winner+" wins!";}else if(!g.winner&&!scratched){const grp=g.groups[g.turn],scored=objects.some(b=>grp==="OPEN"||(grp==="SOLIDS"?b.kind==="solid":b.kind==="stripe"));if(!scored)g.turn=1-g.turn;g.message+=(scored?" Ball pocketed — shoot again!":" Turn passes to "+room.players[g.turn].name+".");}g.shotPocketed=[];g.phase="ready";}
 function initPoolCanvas(initial){
- const canvas=$("poolCanvas");if(!canvas)return;initial=ensurePool(initial);const ctx=canvas.getContext("2d");if(!ctx)return;const W=1000,H=560,m=44,tw=W-2*m,th=H-2*m,pockets=[[0,0],[.5,0],[1,0],[0,1],[.5,1],[1,1]],local=JSON.parse(JSON.stringify(initial));local.aimDx=1;local.aimDy=0;local.power=.45;local.powerDragging=false;local.stickDragging=false;local.pullback=0;local.startRadius=0;local.aimSet=false;
+ const canvas=$("poolCanvas");if(!canvas)return;initial=ensurePool(initial);const ctx=canvas.getContext("2d");if(!ctx)return;const W=1000,H=560,m=44,tw=W-2*m,th=H-2*m,pockets=[[0,0],[.5,0],[1,0],[0,1],[.5,1],[1,1]],local=JSON.parse(JSON.stringify(initial));local.aimDx=1;local.aimDy=0;local.power=.45;local.powerDragging=false;local.stickDragging=false;local.aimSet=false;
  const draw=()=>{
  ctx.clearRect(0,0,W,H);
  // Dark premium cabinet and burgundy wooden rails, inspired by the reference table.
@@ -131,10 +131,13 @@ function initPoolCanvas(initial){
    ctx.beginPath();ctx.moveTo(bx,by);ctx.lineTo(ex,ey);ctx.strokeStyle="#d9b77b";ctx.lineWidth=7;ctx.stroke();
    ctx.beginPath();ctx.moveTo(bx,by);ctx.lineTo(bx-ux*13,by-uy*13);ctx.strokeStyle="#7a3522";ctx.lineWidth=11;ctx.stroke();
    ctx.beginPath();ctx.arc(cx,cy,16,0,Math.PI*2);ctx.strokeStyle="#ffffff88";ctx.lineWidth=2;ctx.stroke();
-   if(local.stickDragging&&local.pullback>0){
-    ctx.beginPath();ctx.arc(cx,cy,23,0,Math.PI*2);ctx.strokeStyle="#ffe6a0";ctx.lineWidth=3;ctx.stroke();
-    ctx.fillStyle="#fff";ctx.font="bold 15px Arial";ctx.textAlign="center";ctx.fillText("POWER "+Math.round(Math.min(1,local.pullback/150)*100)+"%",cx,cy+42);
-   }
+   // Separate draggable power vessel; releasing its handle fires the shot.
+   const vx=963,top=155,bottom=405,handleY=bottom-local.power*(bottom-top);
+   ctx.save();ctx.fillStyle="#06111cdd";ctx.strokeStyle="#d6e2eb";ctx.lineWidth=2;ctx.beginPath();ctx.roundRect(vx-19,top,38,bottom-top,18);ctx.fill();ctx.stroke();
+   const pg=ctx.createLinearGradient(vx-8,0,vx+8,0);pg.addColorStop(0,"#754321");pg.addColorStop(.5,"#f2d6a0");pg.addColorStop(1,"#9b6336");
+   ctx.strokeStyle=pg;ctx.lineWidth=12;ctx.lineCap="round";ctx.beginPath();ctx.moveTo(vx,handleY-23);ctx.lineTo(vx,handleY+23);ctx.stroke();
+   ctx.fillStyle="#f6e3bc";ctx.beginPath();ctx.arc(vx,handleY,12,0,Math.PI*2);ctx.fill();ctx.fillStyle="#fff";ctx.font="bold 13px Arial";ctx.textAlign="center";ctx.fillText("POWER",vx,top-12);ctx.fillText(Math.round(local.power*100)+"%",vx,bottom+22);
+   ctx.restore();
   }
  }
  };
@@ -147,48 +150,35 @@ function initPoolCanvas(initial){
   const current=room?.state?.pool||initial;
   if(current.turn!==me()||current.winner||current.phase!=="ready"||room.players.length<2)return;
   const p=point(e),cue=local.balls.find(b=>b.id===0&&!b.pocketed);if(!cue)return;
-  const cx=m+cue.x*tw,cy=m+cue.y*th,rx=p.x-cx,ry=p.y-cy,r=Math.hypot(rx,ry);
   try{canvas.setPointerCapture(e.pointerId);}catch{}
-  if(current.ballInHand){cue.x=Math.max(.04,Math.min(.96,(p.x-m)/tw));cue.y=Math.max(.04,Math.min(.96,(p.y-m)/th));local.placed=true;local.aiming=true;local.px=p.x;local.py=p.y;draw();return;}
-  const ux=local.aimDx,uy=local.aimDy,backX=-ux,backY=-uy,along=rx*backX+ry*backY,across=Math.abs(rx*backY-ry*backX);
-  // Touching the visible cue stick lets the player pull it back to shoot.
-  if(along>24&&along<285&&across<34){
-   local.stickDragging=true;local.aiming=false;local.startRadius=r;local.pullback=0;local.startX=p.x;local.startY=p.y;local.startAlong=along;draw();return;
-  }
-  // Touch around the cue ball and move to rotate the stick / set the aim.
-  local.aiming=true;local.px=p.x;local.py=p.y;draw();
+  // Dedicated power slider on the right: drag it and release to shoot.
+  if(p.x>925&&p.y>125&&p.y<435){local.powerDragging=true;local.aiming=false;local.power=Math.max(0,Math.min(1,(405-p.y)/250));draw();return;}
+  if(current.ballInHand){cue.x=Math.max(.04,Math.min(.96,(p.x-m)/tw));cue.y=Math.max(.04,Math.min(.96,(p.y-m)/th));local.placed=true;}
+  // The whole table is an easy aim surface: move your finger to rotate the stick.
+  local.aiming=true;local.px=p.x;local.py=p.y;
+  const cx=m+cue.x*tw,cy=m+cue.y*th,dx=p.x-cx,dy=p.y-cy,len=Math.hypot(dx,dy);
+  if(len>12){local.aimDx=dx/len;local.aimDy=dy/len;}
+  draw();
  };
  canvas.onpointermove=e=>{
-  if(!local.aiming&&!local.stickDragging)return;e.preventDefault();const p=point(e);
+  if(!local.aiming&&!local.powerDragging)return;e.preventDefault();const p=point(e);
+  if(local.powerDragging){local.power=Math.max(0,Math.min(1,(405-p.y)/250));draw();return;}
   const cue=local.balls.find(b=>b.id===0&&!b.pocketed);if(!cue)return;
-  const cx=m+cue.x*tw,cy=m+cue.y*th,rx=p.x-cx,ry=p.y-cy,r=Math.hypot(rx,ry);
-  if(local.stickDragging){
-   const ux=local.aimDx,uy=local.aimDy,backX=-ux,backY=-uy;
-   const along=rx*backX+ry*backY,across=Math.abs(rx*backY-ry*backX);
-   if(along>0&&across<Math.max(45,along*.35)){
-    local.pullback=Math.max(0,along-local.startAlong);
-    if(local.pullback<16&&r>20){local.aimDx=-rx/r;local.aimDy=-ry/r;}
-   }else if(r>20){local.aimDx=-rx/r;local.aimDy=-ry/r;}
-   draw();return;
-  }
-  local.px=p.x;local.py=p.y;draw();
+  local.px=p.x;local.py=p.y;
+  const cx=m+cue.x*tw,cy=m+cue.y*th,dx=p.x-cx,dy=p.y-cy,len=Math.hypot(dx,dy);
+  if(len>12){local.aimDx=dx/len;local.aimDy=dy/len;}
+  draw();
  };
  canvas.onpointerup=e=>{
-  if(!local.aiming&&!local.stickDragging)return;e.preventDefault();
-  const p=point(e),cue=local.balls.find(b=>b.id===0&&!b.pocketed);
-  if(local.stickDragging){
-   const power=local.pullback;local.stickDragging=false;local.pullback=0;
-   if(power>=16){
-    const dx=local.aimDx,dy=local.aimDy;
-    change(s=>{const g=s.pool;if(g.turn!==me()||g.winner||g.phase!=="ready"||room.players.length<2)return;shootPool(g,dx*(100+Math.min(1,power/150)*500),dy*(100+Math.min(1,power/150)*500));});
-   }else draw();
+  if(!local.aiming&&!local.powerDragging)return;e.preventDefault();
+  if(local.powerDragging){
+   local.powerDragging=false;
+   const power=local.power,dx=local.aimDx,dy=local.aimDy;
+   change(s=>{const g=s.pool;if(g.turn!==me()||g.winner||g.phase!=="ready"||room.players.length<2)return;const scale=80+power*520;shootPool(g,dx*scale,dy*scale);});
    return;
   }
-  if(!cue){local.aiming=false;draw();return;}
-  local.aiming=false;
-  const cx=m+cue.x*tw,cy=m+cue.y*th,dx=p.x-cx,dy=p.y-cy;
-  if(Math.hypot(dx,dy)>8){local.aimDx=dx/Math.hypot(dx,dy);local.aimDy=dy/Math.hypot(dx,dy);local.aimSet=true;}
-  if(local.placed){change(s=>{if(s.pool.turn===me()&&s.pool.phase==="ready"){const c=s.pool.balls.find(b=>b.id===0);if(c){c.x=cue.x;c.y=cue.y;s.pool.ballInHand=false;}}});local.placed=false;}
+  const cue=local.balls.find(b=>b.id===0&&!b.pocketed);local.aiming=false;
+  if(local.placed&&cue){change(s=>{if(s.pool.turn===me()&&s.pool.phase==="ready"){const c=s.pool.balls.find(b=>b.id===0);if(c){c.x=cue.x;c.y=cue.y;s.pool.ballInHand=false;}}});local.placed=false;}
   draw();
  };
  canvas.onpointercancel=()=>{local.aiming=false;draw();};
