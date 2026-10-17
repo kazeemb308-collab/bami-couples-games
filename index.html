@@ -711,6 +711,12 @@ body:has(#gameArea:not(.hidden) .ttt-screen){overflow:hidden}
  #gameArea:has(.pool-game) .pool-shoot{grid-column:1/-1;width:100%;min-height:56px;font-size:16px}
  #gameArea:has(.pool-game) .pool-canvas-hint{font-size:10px}
 }
+
+/* Full-width single power bar for direct cue aiming */
+#gameArea:has(.pool-game) .pool-controls{grid-template-columns:minmax(0,1fr)}
+#gameArea:has(.pool-game) .pool-controls .power-only{grid-column:1/-1;width:100%}
+#gameArea:has(.pool-game) .pool-controls .power-range{height:54px;accent-color:#ffe27a;cursor:grab}
+#gameArea:has(.pool-game) .pool-controls .power-range:active{cursor:grabbing}
 </style>
 </head><body>
 <header><div class="brand">Bami <span>&</span> Oluwatosin <span>♥</span></div><div class="status" id="connectionStatus">Connecting…<br>Private couple room</div></header>
