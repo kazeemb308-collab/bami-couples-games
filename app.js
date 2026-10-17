@@ -524,7 +524,15 @@ async function addComputer(){
 }
 function scheduleComputerTurn(){
  if(botThinking||!room||!room.players[1]?.isBot||me()!==0||!gameOpen)return;
- const s=room.state;if(!s)return;let should=false;
+ const s=room.state;if(!s)return;
+ // Recover an already-finished computer match where the human tapped Rematch before the bot auto-accept fix deployed.
+ const finishedNow=finishedGameInfo(s),votesNow=Array.isArray(s.rematchVotes)?s.rematchVotes:[];
+ if(finishedNow&&votesNow.includes(0)&&!votesNow.includes(1)){
+  botThinking=true;
+  setTimeout(async()=>{try{await change(st=>{const f=finishedGameInfo(st),v=Array.isArray(st.rematchVotes)?st.rematchVotes:[];if(f&&v.includes(0)){if(!v.includes(1))v.push(1);st.rematchVotes=v;resetFinishedGame(st,f.key);}});}finally{botThinking=false;}},0);
+  return;
+ }
+ let should=false;
  if(activeGame==="ttt")should=!s.ttt.winner&&s.ttt.moves<9&&s.ttt.turn==="O";
  else if(activeGame==="snakes")should=!s.snakes.winner&&s.snakes.turn===1;
  else if(activeGame==="ayo")should=!s.ayo.winner&&s.ayo.turn===1;
