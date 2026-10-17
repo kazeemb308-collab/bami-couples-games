@@ -548,7 +548,7 @@ function scheduleComputerTurn(){
   try{await change(st=>{
    const pick=a=>a[Math.floor(Math.random()*a.length)];
    if(activeGame==="ttt"){
-    const g=st.ttt,mark="O",lines=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+    const g=st.ttt;if(!g||g.turn!=="O"||g.winner||g.moves>=9)return;const mark="O",lines=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
     let choice=-1;for(const m of ["O","X"]){for(let i=0;i<9;i++)if(!g.cells[i]){g.cells[i]=m;const wins=lines.some(l=>l.every(n=>g.cells[n]===m));g.cells[i]="";if(wins){choice=i;break;}}if(choice>=0)break;}
     if(choice<0){const empty=g.cells.map((v,i)=>v? -1:i).filter(i=>i>=0);choice=pick(empty);}if(choice>=0){g.cells[choice]=mark;g.moves++;if(lines.some(l=>l.every(n=>g.cells[n]===mark)))g.winner="Computer";else g.turn="X";}
    }else if(activeGame==="snakes"){
