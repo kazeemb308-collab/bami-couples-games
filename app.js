@@ -157,7 +157,7 @@ function initPoolCanvas(initial){
   // Like mobile 8 Ball Pool: pull the power bar, then release to strike.
   let powerPointer=false,shotSent=false;
   powerSlider.onpointerdown=()=>{powerPointer=true;shotSent=false;};
-  const firePowerShot=()=>{if(!powerPointer||shotSent)return;powerPointer=false;shotSent=true;const current=room?.state?.pool||initial;if(current.turn!==me()||current.winner||current.phase!=="ready"||room.players.length<2)return;const angle=local.angleDeg*Math.PI/180,power=Math.max(0,Math.min(1,local.power)),shotSpeed=.006+power*.039,shotVector=shotSpeed/.00008,dx=Math.cos(angle),dy=Math.sin(angle);change(s=>{const g=s.pool;if(g.turn!==me()||g.winner||g.phase!=="ready"||room.players.length<2)return;shootPool(g,dx*shotVector,dy*shotVector);});};
+  const firePowerShot=()=>{if(!powerPointer||shotSent)return;powerPointer=false;shotSent=true;const current=room?.state?.pool||initial;if(current.turn!==me()||current.winner||current.phase!=="ready"||room.players.length<2)return;const angle=local.angleDeg*Math.PI/180,power=Math.max(0,Math.min(1,local.power)),shotSpeed=.006+power*.039,shotVector=shotSpeed/.00008,dx=Math.cos(angle)*th,dy=Math.sin(angle)*tw;change(s=>{const g=s.pool;if(g.turn!==me()||g.winner||g.phase!=="ready"||room.players.length<2)return;shootPool(g,dx*shotVector,dy*shotVector);});};
   powerSlider.onpointerup=firePowerShot;
   powerSlider.onpointercancel=()=>{powerPointer=false;};
   powerSlider.onchange=()=>{if(powerPointer)firePowerShot();};
