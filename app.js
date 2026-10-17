@@ -487,6 +487,8 @@ function wireGame(){
   const finished=finishedGameInfo(s);if(!finished)return;
   const votes=Array.isArray(s.rematchVotes)?s.rematchVotes:[];
   if(!votes.includes(me()))votes.push(me());
+  // The computer accepts rematches automatically.
+  if(room?.players?.[1]?.isBot&&!votes.includes(1))votes.push(1);
   s.rematchVotes=votes;
   if(s.rematchVotes.includes(0)&&s.rematchVotes.includes(1))resetFinishedGame(s,finished.key);
  });
