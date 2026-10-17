@@ -148,8 +148,9 @@ function initPoolCanvas(initial){
   const p=point(e),cue=local.balls.find(b=>b.id===0&&!b.pocketed);local.aiming=false;
   if(!cue){draw();return;}
   if(local.placed){change(s=>{if(s.pool.turn===me()&&s.pool.phase==="ready"){const c=s.pool.balls.find(b=>b.id===0);if(c){c.x=cue.x;c.y=cue.y;s.pool.ballInHand=false;}}});local.placed=false;}
-  const dx=m+cue.x*tw-p.x,dy=m+cue.y*th-p.y;
-  if(Math.hypot(dx,dy)<12){draw();return;}
+  // Shoot toward the point the player dragged to; the cue stick extends in the opposite direction.
+  const dx=p.x-(m+cue.x*tw),dy=p.y-(m+cue.y*th);
+  if(Math.hypot(dx,dy)<18){draw();return;}
   change(s=>{const g=s.pool;if(g.turn!==me()||g.winner||g.phase!=="ready"||room.players.length<2)return;shootPool(g,dx,dy);});
  };
  canvas.onpointercancel=()=>{local.aiming=false;draw();};
