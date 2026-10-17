@@ -129,7 +129,7 @@ function renderRoom(){
 }
 async function change(fn){
  if(!room||!roomId)return;
- try{await runTransaction(db,async tx=>{const ref=doc(db,"coupleRooms",roomId),snap=await tx.get(ref);if(!snap.exists())throw Error("Room not found.");const data=snap.data(),oldState=structuredClone(data.state),state=structuredClone(data.state);fn(state,data);state.scores=Array.isArray(state.scores)?state.scores:[0,0];state.gameScores=state.gameScores&&typeof state.gameScores==="object"?state.gameScores:{whot:[0,0],ludo:[0,0],ttt:[0,0]};for(const key of ["whot","ludo","ttt"]){const oldWinner=oldState[key]?.winner,newWinner=state[key]?.winner;if(!oldWinner&&newWinner){const winnerIndex=data.players.findIndex(p=>p.name===newWinner);if(winnerIndex>=0){if(key==="whot"||key==="ludo"||key==="ayo"||key==="pool"){state.gameScores[key]=Array.isArray(state.gameScores[key])?state.gameScores[key]:[0,0];state.gameScores[key][winnerIndex]=(state.gameScores[key][winnerIndex]||0)+1;}else state.scores[winnerIndex]=(state.scores[winnerIndex]||0)+1;}}}tx.update(ref,{state});});}
+ try{await runTransaction(db,async tx=>{const ref=doc(db,"coupleRooms",roomId),snap=await tx.get(ref);if(!snap.exists())throw Error("Room not found.");const data=snap.data(),oldState=structuredClone(data.state),state=structuredClone(data.state);fn(state,data);state.scores=Array.isArray(state.scores)?state.scores:[0,0];state.gameScores=state.gameScores&&typeof state.gameScores==="object"?state.gameScores:{whot:[0,0],ludo:[0,0],ttt:[0,0]};for(const key of ["whot","ludo","ttt","ayo","pool"]){const oldWinner=oldState[key]?.winner,newWinner=state[key]?.winner;if(!oldWinner&&newWinner){const winnerIndex=data.players.findIndex(p=>p.name===newWinner);if(winnerIndex>=0){if(key==="whot"||key==="ludo"||key==="ayo"||key==="pool"){state.gameScores[key]=Array.isArray(state.gameScores[key])?state.gameScores[key]:[0,0];state.gameScores[key][winnerIndex]=(state.gameScores[key][winnerIndex]||0)+1;}else state.scores[winnerIndex]=(state.scores[winnerIndex]||0)+1;}}}tx.update(ref,{state});});}
  catch(e){say(e.message);}
 }
 function cardLabel(c){return c.s===5?"20":String(c.n);}
@@ -332,6 +332,7 @@ function finishedGameInfo(s){
  const key=activeGame==="whot"?"whot":activeGame==="ludo"?"ludo":activeGame==="snakes"?"snakes":activeGame==="ttt"?"ttt":activeGame==="ayo"?"ayo":activeGame==="pool"?"pool":null;
  if(!key)return null;
  const g=s[key];if(!g)return null;
+ if(g.winner==="DRAW")return {key,winner:"",draw:true};
  if(g.winner)return {key,winner:g.winner,draw:false};
  if(key==="ttt"&&g.moves>=9)return {key,winner:"",draw:true};
  return null;
