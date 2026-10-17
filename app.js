@@ -123,7 +123,17 @@ function initPoolCanvas(initial){
    const edgeX=ux>0?(W-m-cx)/ux:ux<0?(m-cx)/ux:Infinity,edgeY=uy>0?(H-m-cy)/uy:uy<0?(m-cy)/uy:Infinity;
    const edge=Math.min(edgeX>0?edgeX:Infinity,edgeY>0?edgeY:Infinity);if(Number.isFinite(edge))rayLen=Math.min(rayLen,edge);
    ctx.save();ctx.setLineDash([10,7]);ctx.lineWidth=3;ctx.strokeStyle="#ffffffdd";ctx.beginPath();ctx.moveTo(cx+ux*(cue.r*tw+3),cy+uy*(cue.r*tw+3));ctx.lineTo(cx+ux*rayLen,cy+uy*rayLen);ctx.stroke();ctx.restore();
-   if(hitBall){const hx=m+hitBall.x*tw,hy=m+hitBall.y*th;ctx.beginPath();ctx.arc(hx,hy,hitBall.r*tw+5,0,Math.PI*2);ctx.strokeStyle="#fff7a8";ctx.lineWidth=3;ctx.stroke();}
+   if(hitBall){
+    const hx=m+hitBall.x*tw,hy=m+hitBall.y*th,hr=hitBall.r*tw;
+    // Highlight the ball being targeted and show its predicted travel direction.
+    ctx.beginPath();ctx.arc(hx,hy,hr+5,0,Math.PI*2);ctx.strokeStyle="#fff7a8";ctx.lineWidth=3;ctx.stroke();
+    const objectLine=78;
+    ctx.save();ctx.strokeStyle="#ffe27a";ctx.lineWidth=3.5;ctx.lineCap="round";
+    ctx.beginPath();ctx.moveTo(hx+ux*(hr+2),hy+uy*(hr+2));ctx.lineTo(hx+ux*(hr+objectLine),hy+uy*(hr+objectLine));ctx.stroke();
+    const tx=hx+ux*(hr+objectLine),ty=hy+uy*(hr+objectLine),angle=Math.atan2(uy,ux);
+    ctx.beginPath();ctx.moveTo(tx,ty);ctx.lineTo(tx-10*Math.cos(angle-.55),ty-10*Math.sin(angle-.55));ctx.moveTo(tx,ty);ctx.lineTo(tx-10*Math.cos(angle+.55),ty-10*Math.sin(angle+.55));ctx.stroke();
+    ctx.restore();
+   }
    // Cue stick points opposite the aim direction; pull-back amount follows selected power.
    const pull=local.power*85;
    const bx=cx-ux*(34+pull),by=cy-uy*(34+pull),ex=cx-ux*(235+pull),ey=cy-uy*(235+pull);
