@@ -115,8 +115,8 @@ function initPoolCanvas(initial){
    // While aiming, the pointer defines the shot direction; otherwise aim at the rack.
    const angle=local.angleDeg*Math.PI/180,ux=Math.cos(angle),uy=Math.sin(angle);local.aimDx=ux;local.aimDy=uy;
    // Predict the cue ball's path to the first object ball or cushion.
-   let rayLen=420,hitBall=null;
-   for(const b of local.balls){if(b.id===0||b.pocketed)continue;const bx0=m+b.x*tw,by0=m+b.y*th,vx=ux,vy=uy,rx=bx0-cx,ry=by0-cy,proj=rx*vx+ry*vy,perp=Math.abs(rx*vy-ry*vx);if(proj>0&&perp<(b.r*tw+cue.r*tw*.9)&&proj<rayLen){rayLen=proj;hitBall=b;}}
+   let rayLen=420,hitBall=null,hitDistance=Infinity,hitImpactX=0,hitImpactY=0;
+   for(const b of local.balls){if(b.id===0||b.pocketed)continue;const bx0=m+b.x*tw,by0=m+b.y*th,rx=bx0-cx,ry=by0-cy,proj=rx*ux+ry*uy,perp=rx*uy-ry*ux,combined=(b.r+cue.r)*tw,disc=combined*combined-perp*perp;if(proj>0&&disc>=0){const contact=proj-Math.sqrt(disc);if(contact>=0&&contact<hitDistance){hitDistance=contact;rayLen=contact;hitBall=b;hitImpactX=cx+ux*contact;hitImpactY=cy+uy*contact;}}}
    const edgeX=ux>0?(W-m-cx)/ux:ux<0?(m-cx)/ux:Infinity,edgeY=uy>0?(H-m-cy)/uy:uy<0?(m-cy)/uy:Infinity;
    const edge=Math.min(edgeX>0?edgeX:Infinity,edgeY>0?edgeY:Infinity);if(Number.isFinite(edge))rayLen=Math.min(rayLen,edge);
    ctx.save();ctx.setLineDash([10,7]);ctx.lineWidth=3;ctx.strokeStyle="#ffffffdd";ctx.beginPath();ctx.moveTo(cx+ux*(cue.r*tw+3),cy+uy*(cue.r*tw+3));ctx.lineTo(cx+ux*rayLen,cy+uy*rayLen);ctx.stroke();ctx.restore();
@@ -126,7 +126,7 @@ function initPoolCanvas(initial){
     ctx.beginPath();ctx.arc(hx,hy,hr+5,0,Math.PI*2);ctx.strokeStyle="#fff7a8";ctx.lineWidth=3;ctx.stroke();
     // The object ball travels along the centre-to-centre collision normal, not
     // necessarily the cue ball's incoming direction (important for cut shots).
-    const ox=(hitBall.x-cue.x)*tw,oy=(hitBall.y-cue.y)*th,olen=Math.hypot(ox,oy)||1,txu=ox/olen,tyu=oy/olen;
+    const ox=hx-hitImpactX,oy=hy-hitImpactY,olen=Math.hypot(ox,oy)||1,txu=ox/olen,tyu=oy/olen;
     const objectLine=Math.min(210,Math.max(95,tw*.19));
     ctx.save();ctx.strokeStyle="#ffe27a";ctx.lineWidth=5;ctx.lineCap="round";
     ctx.beginPath();ctx.moveTo(hx+txu*(hr+3),hy+tyu*(hr+3));ctx.lineTo(hx+txu*(hr+objectLine),hy+tyu*(hr+objectLine));ctx.stroke();
@@ -136,10 +136,10 @@ function initPoolCanvas(initial){
    }
    // Cue stick points opposite the aim direction; pull-back amount follows selected power.
    const pull=local.power*85;
-   const bx=cx-ux*(34+pull),by=cy-uy*(34+pull),ex=cx-ux*(235+pull),ey=cy-uy*(235+pull);
+   const tipX=cx-ux*(cue.r*tw+4),tipY=cy-uy*(cue.r*tw+4),bx=tipX-ux*(34+pull),by=tipY-uy*(34+pull),ex=tipX-ux*(235+pull),ey=tipY-uy*(235+pull);
    ctx.lineCap="round";ctx.beginPath();ctx.moveTo(bx,by);ctx.lineTo(ex,ey);ctx.strokeStyle="#111722";ctx.lineWidth=12;ctx.stroke();
-   ctx.beginPath();ctx.moveTo(bx,by);ctx.lineTo(ex,ey);ctx.strokeStyle="#d9b77b";ctx.lineWidth=7;ctx.stroke();
-   ctx.beginPath();ctx.moveTo(bx,by);ctx.lineTo(bx-ux*13,by-uy*13);ctx.strokeStyle="#7a3522";ctx.lineWidth=11;ctx.stroke();
+   ctx.beginPath();ctx.moveTo(bx,by);ctx.lineTo(tipX,tipY);ctx.strokeStyle="#d9b77b";ctx.lineWidth=7;ctx.stroke();
+   ctx.beginPath();ctx.moveTo(tipX,tipY);ctx.lineTo(tipX-ux*13,tipY-uy*13);ctx.strokeStyle="#7a3522";ctx.lineWidth=7;ctx.stroke();
    ctx.beginPath();ctx.arc(cx,cy,16,0,Math.PI*2);ctx.strokeStyle="#ffffff88";ctx.lineWidth=2;ctx.stroke();
 
   }
