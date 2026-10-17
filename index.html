@@ -684,6 +684,33 @@ body:has(#gameArea:not(.hidden) .ttt-screen){overflow:hidden}
 .pool-game{max-width:1000px;margin:auto;padding:10px}.pool-top,.pool-score,.pool-footer{display:flex;align-items:center;justify-content:space-between;gap:12px}.pool-top h2{margin:3px 0;color:#f4d078}.pool-top small{font-size:9px;color:#a7b0ca;letter-spacing:2px;font-weight:900}.pool-turn{font-size:10px;font-weight:1000;padding:9px 12px;border-radius:999px;background:#28314d;color:#cbd5eb}.pool-turn.mine{background:#f4d078;color:#271c09}.pool-score{margin:12px 0;padding:12px;background:#10182a;border:1px solid #35425e;border-radius:13px;font-size:11px}.pool-score span{min-width:0;overflow:hidden;text-overflow:ellipsis}.pool-score span b{color:#f4d078;margin-left:4px}.pool-score strong{font-size:9px;color:#a7b0ca;white-space:nowrap}.pool-table-wrap{position:relative;background:#4b2919;border:5px solid #b98542;border-radius:18px;padding:7px;box-shadow:0 9px 0 #442717,0 15px 30px #0006}.pool-table-wrap canvas{display:block;width:100%;height:auto;touch-action:none;border-radius:8px}.pool-canvas-hint{text-align:center;color:#f3d8a2;font-size:10px;padding:8px}.pool-message{margin:14px 0;padding:12px;background:#10182a;border:1px solid #35425e;border-radius:12px;color:#f4d078;font-size:13px}.pool-footer{font-size:10px;color:#a7b0ca}.pool-footer button{white-space:nowrap}
 @media(max-width:440px){.pool-game{padding:4px}.pool-table-wrap{border-width:3px;padding:4px}.pool-top h2{font-size:19px}.pool-score{padding:8px;font-size:9px}.pool-footer{align-items:flex-start;line-height:1.4}.pool-footer button{padding:9px;font-size:10px}}
 
+
+/* Pool controls: large, touch-friendly horizontal aiming and power sliders */
+#gameArea:has(.pool-game){background:radial-gradient(ellipse at top,#15253a 0%,#070d17 75%)}
+#gameArea:has(.pool-game) .pool-game{width:100%;max-width:1120px;margin:0 auto;padding:10px clamp(8px,2vw,22px) max(14px,env(safe-area-inset-bottom))}
+#gameArea:has(.pool-game) .pool-table-wrap{width:100%;margin:8px auto 0}
+#gameArea:has(.pool-game) #poolCanvas{display:block;width:100%;height:auto;aspect-ratio:25/14;touch-action:manipulation;border-radius:8px}
+#gameArea:has(.pool-game) .pool-canvas-hint{font-size:11px;color:#c4d2e5;text-align:center;padding:7px 4px}
+#gameArea:has(.pool-game) .pool-controls{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;gap:12px;align-items:end;margin:8px 0 12px;padding:14px;background:linear-gradient(145deg,#17243a,#0b1422);border:1px solid #42536c;border-radius:16px;box-shadow:0 8px 20px #0004}
+#gameArea:has(.pool-game) .pool-control-block{min-width:0}
+#gameArea:has(.pool-game) .pool-control-heading{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px;color:#dbe8f8;font-size:12px;font-weight:950;letter-spacing:.7px}
+#gameArea:has(.pool-game) .pool-control-heading output{color:#ffe27a;font-size:15px;font-weight:1000;font-variant-numeric:tabular-nums}
+#gameArea:has(.pool-game) .pool-range{display:block;width:100%;height:42px;margin:0;cursor:pointer;touch-action:pan-y;accent-color:#ffe27a}
+#gameArea:has(.pool-game) .aim-range{accent-color:#63e6ff}
+#gameArea:has(.pool-game) .pool-shoot{min-width:120px;min-height:56px;padding:14px 18px;background:linear-gradient(145deg,#ffe58d,#f5ad37);color:#271708;border:2px solid #fff0b6;border-radius:14px;font-size:15px;font-weight:1000;letter-spacing:.6px;box-shadow:0 4px 0 #8a4e1b,0 6px 12px #0004}
+#gameArea:has(.pool-game) .pool-shoot:disabled{opacity:.45;box-shadow:none}
+#gameArea:has(.pool-game) .pool-message{padding:10px 12px;background:#101a2b;border:1px solid #293c55;border-radius:11px}
+@media(max-width:650px){
+ #gameArea:has(.pool-game) .pool-game{padding:7px 7px max(12px,env(safe-area-inset-bottom))}
+ #gameArea:has(.pool-game) .pool-top h2{font-size:18px}
+ #gameArea:has(.pool-game) .pool-score{font-size:10px;gap:6px}
+ #gameArea:has(.pool-game) .pool-controls{grid-template-columns:1fr 1fr;gap:9px;padding:10px;border-radius:13px}
+ #gameArea:has(.pool-game) .pool-control-heading{font-size:10px;letter-spacing:.2px;margin-bottom:5px}
+ #gameArea:has(.pool-game) .pool-control-heading output{font-size:14px}
+ #gameArea:has(.pool-game) .pool-range{height:48px}
+ #gameArea:has(.pool-game) .pool-shoot{grid-column:1/-1;width:100%;min-height:56px;font-size:16px}
+ #gameArea:has(.pool-game) .pool-canvas-hint{font-size:10px}
+}
 </style>
 </head><body>
 <header><div class="brand">Bami <span>&</span> Oluwatosin <span>♥</span></div><div class="status" id="connectionStatus">Connecting…<br>Private couple room</div></header>
