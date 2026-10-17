@@ -108,7 +108,7 @@ function initPoolCanvas(initial){
  });
  {
   const cue=local.balls.find(b=>b.id===0&&!b.pocketed);
-  const canAim=initial.turn===me()&&!initial.winner&&initial.phase==="ready";
+  const canAim=!initial.winner&&initial.phase==="ready";
   if(cue&&(local.aiming||canAim)){
    const cx=m+cue.x*tw,cy=m+cue.y*th;
    // Keep a usable cue stick visible before the player touches the table.
@@ -120,7 +120,7 @@ function initPoolCanvas(initial){
    const ax=cx+ux*aimLen,ay=cy+uy*aimLen;
    ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(ax,ay);ctx.setLineDash([7,7]);ctx.strokeStyle="#f9ffffcc";ctx.lineWidth=2;ctx.stroke();ctx.setLineDash([]);
    // Cue stick: visible at rest, with a dark butt and pale wooden shaft.
-   const bx=cx-ux*28,by=cy-uy*28,ex=cx-ux*(local.aiming?Math.max(150,len+75):190),ey=cy-uy*(local.aiming?Math.max(150,len+75):190);
+   const bx=cx-ux*34,by=cy-uy*34,ex=cx-ux*(local.aiming?Math.max(175,len+90):235),ey=cy-uy*(local.aiming?Math.max(175,len+90):235);
    ctx.lineCap="round";ctx.beginPath();ctx.moveTo(bx,by);ctx.lineTo(ex,ey);ctx.strokeStyle="#111722";ctx.lineWidth=12;ctx.stroke();
    ctx.beginPath();ctx.moveTo(bx,by);ctx.lineTo(ex,ey);ctx.strokeStyle="#d9b77b";ctx.lineWidth=7;ctx.stroke();
    ctx.beginPath();ctx.moveTo(bx,by);ctx.lineTo(bx-ux*13,by-uy*13);ctx.strokeStyle="#7a3522";ctx.lineWidth=11;ctx.stroke();
