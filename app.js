@@ -261,17 +261,18 @@ function playWhotCard(g,p,i,chosenShape){
  const opponent=1-p;
  if(oldPenalty){
   if(c.n===oldPenalty.type){
-   // Same Pick Two/Three passes the same penalty onward; no stacking extra cards.
-   g.pendingPenalty={type:oldPenalty.type,amount:oldPenalty.amount,player:opponent};g.turn=opponent;
-   g.message=room.players[p].name+" passed the Pick "+(oldPenalty.type===2?"Two":"Three")+" on. "+room.players[opponent].name+" must defend with the same card or pick "+oldPenalty.amount+".";
+   // Defending cancels the penalty; the player who started it gets the next turn.
+   const firstPlayer=Number.isInteger(oldPenalty.origin)?oldPenalty.origin:opponent;
+   g.pendingPenalty=null;g.turn=firstPlayer;
+   g.message=room.players[p].name+" defended the Pick "+(oldPenalty.type===2?"Two":"Three")+"! Penalty cancelled. "+room.players[firstPlayer].name+" plays again.";
   }else{
-   g.pendingPenalty={type:oldPenalty.type,amount:oldPenalty.amount,player:opponent};g.turn=opponent;
-   g.message=room.players[p].name+" did not block the penalty. Pick "+oldPenalty.amount+" remains for the next player.";
+   g.pendingPenalty={type:oldPenalty.type,amount:oldPenalty.amount,player:opponent,origin:oldPenalty.origin};g.turn=opponent;
+   g.message=room.players[p].name+" must defend the Pick "+(oldPenalty.type===2?"Two":"Three")+" or pick "+oldPenalty.amount+" cards.";
   }
  }else if(c.n===2&&c.s!==5){
-  g.pendingPenalty={type:2,amount:2,player:opponent};g.turn=opponent;g.message="Pick Two! Only "+room.players[opponent].name+" must defend with another 2 or pick 2 cards.";
+  g.pendingPenalty={type:2,amount:2,player:opponent,origin:p};g.turn=opponent;g.message="Pick Two! "+room.players[opponent].name+" can defend with another 2. If defended, "+room.players[p].name+" plays again; otherwise pick 2 cards.";
  }else if(c.n===5&&c.s!==5){
-  g.pendingPenalty={type:5,amount:3,player:opponent};g.turn=opponent;g.message="Pick Three! Only "+room.players[opponent].name+" must defend with another 5 or pick 3 cards.";
+  g.pendingPenalty={type:5,amount:3,player:opponent,origin:p};g.turn=opponent;g.message="Pick Three! "+room.players[opponent].name+" can defend with another 5. If defended, "+room.players[p].name+" plays again; otherwise pick 3 cards.";
  }else if(c.n===8&&c.s!==5){g.turn=p;g.message="Suspension! "+room.players[opponent].name+" misses a turn.";}
  else if(c.n===1&&c.s!==5){g.turn=p;g.message="Hold On! "+room.players[p].name+" plays again.";}
  else if(c.n===14&&c.s!==5){g.pendingGeneralMarket=opponent;g.turn=opponent;const target=room.players[opponent]?.isBot?"Computer":room.players[opponent].name;g.message="General Market! "+target+" must pick one card from the Market.";}
