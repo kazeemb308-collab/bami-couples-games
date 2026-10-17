@@ -130,9 +130,29 @@ function initPoolCanvas(initial){
  };
  const collide=(a,b)=>{if(a.pocketed||b.pocketed)return;const dx=b.x-a.x,dy=(b.y-a.y)*th/tw,d=Math.hypot(dx,dy),min=a.r+b.r;if(!d||d>=min)return;const nx=dx/d,ny=dy/d,overlap=min-d;a.x-=nx*overlap*.5;a.y-=ny*overlap*.5*tw/th;b.x+=nx*overlap*.5;b.y+=ny*overlap*.5*tw/th;const rel=(b.vx-a.vx)*nx+(b.vy-a.vy)*ny*th/tw;if(rel<0){a.vx+=rel*nx*.96;a.vy+=rel*ny*.96*tw/th;b.vx-=rel*nx*.96;b.vy-=rel*ny*.96*tw/th;}};
  const step=()=>{let moving=false;for(const b of local.balls){if(b.pocketed)continue;b.x+=b.vx;b.y+=b.vy;b.vx*=.986;b.vy*=.986;if(Math.abs(b.vx)+Math.abs(b.vy)>.0008)moving=true;else b.vx=b.vy=0;if(b.x<b.r){b.x=b.r;b.vx=Math.abs(b.vx)*.86;}if(b.x>1-b.r){b.x=1-b.r;b.vx=-Math.abs(b.vx)*.86;}if(b.y<b.r){b.y=b.r;b.vy=Math.abs(b.vy)*.86;}if(b.y>1-b.r){b.y=1-b.r;b.vy=-Math.abs(b.vy)*.86;}for(const [px,py] of pockets){if(Math.hypot((b.x-px),(b.y-py)*th/tw)<.033){b.pocketed=true;b.vx=b.vy=0;break;}}}for(let i=0;i<local.balls.length;i++)for(let j=i+1;j<local.balls.length;j++)collide(local.balls[i],local.balls[j]);return moving||local.balls.some(b=>Math.abs(b.vx)+Math.abs(b.vy)>.0008);};
- canvas.onpointerdown=e=>{if(initial.turn!==me()||initial.winner||initial.phase!=="ready")return;const r=canvas.getBoundingClientRect(),x=(e.clientX-r.left)/r.width*W,y=(e.clientY-r.top)/r.height*H,cue=local.balls.find(b=>b.id===0&&!b.pocketed);if(!cue)return;if(initial.ballInHand){cue.x=Math.max(.04,Math.min(.96,(x-m)/tw));cue.y=Math.max(.04,Math.min(.96,(y-m)/th));local.placed=true;}local.aiming=true;local.px=x;local.py=y;canvas.setPointerCapture(e.pointerId);draw();};
- canvas.onpointermove=e=>{if(!local.aiming)return;const r=canvas.getBoundingClientRect();local.px=(e.clientX-r.left)/r.width*W;local.py=(e.clientY-r.top)/r.height*H;draw();};
- canvas.onpointerup=e=>{if(!local.aiming)return;local.aiming=false;const r=canvas.getBoundingClientRect(),x=(e.clientX-r.left)/r.width*W,y=(e.clientY-r.top)/r.height*H,cue=local.balls.find(b=>b.id===0&&!b.pocketed);if(!cue)return;if(local.placed){change(s=>{if(s.pool.turn===me()&&s.pool.phase==="ready"){const c=s.pool.balls.find(b=>b.id===0);if(c){c.x=cue.x;c.y=cue.y;s.pool.ballInHand=false;}}});local.placed=false;}change(s=>shootPool(s.pool,m+cue.x*tw-x,m+cue.y*th-y));};
+ canvas.style.touchAction="none";
+ const point=e=>{const r=canvas.getBoundingClientRect();return {x:(e.clientX-r.left)/r.width*W,y:(e.clientY-r.top)/r.height*H};};
+ canvas.onpointerdown=e=>{
+  e.preventDefault();
+  const current=room?.state?.pool||initial;
+  if(current.turn!==me()||current.winner||current.phase!=="ready"||room.players.length<2)return;
+  const p=point(e),cue=local.balls.find(b=>b.id===0&&!b.pocketed);if(!cue)return;
+  if(current.ballInHand){cue.x=Math.max(.04,Math.min(.96,(p.x-m)/tw));cue.y=Math.max(.04,Math.min(.96,(p.y-m)/th));local.placed=true;}
+  local.aiming=true;local.px=p.x;local.py=p.y;
+  try{canvas.setPointerCapture(e.pointerId);}catch{}
+  draw();
+ };
+ canvas.onpointermove=e=>{if(!local.aiming)return;e.preventDefault();const p=point(e);local.px=p.x;local.py=p.y;draw();};
+ canvas.onpointerup=e=>{
+  if(!local.aiming)return;e.preventDefault();
+  const p=point(e),cue=local.balls.find(b=>b.id===0&&!b.pocketed);local.aiming=false;
+  if(!cue){draw();return;}
+  if(local.placed){change(s=>{if(s.pool.turn===me()&&s.pool.phase==="ready"){const c=s.pool.balls.find(b=>b.id===0);if(c){c.x=cue.x;c.y=cue.y;s.pool.ballInHand=false;}}});local.placed=false;}
+  const dx=m+cue.x*tw-p.x,dy=m+cue.y*th-p.y;
+  if(Math.hypot(dx,dy)<12){draw();return;}
+  change(s=>{const g=s.pool;if(g.turn!==me()||g.winner||g.phase!=="ready"||room.players.length<2)return;shootPool(g,dx,dy);});
+ };
+ canvas.onpointercancel=()=>{local.aiming=false;draw();};
  if(initial.phase==="rolling"){let frames=0;const tick=()=>{const moving=step();draw();frames++;if(moving&&frames<1400){requestAnimationFrame(tick);return;}change(s=>{if(s.pool.phase!=="rolling")return;s.pool.balls=local.balls.map(b=>({...b,vx:0,vy:0}));settlePool(s.pool);});};requestAnimationFrame(tick);}else draw();
 }
 
