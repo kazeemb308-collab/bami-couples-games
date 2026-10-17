@@ -60,11 +60,11 @@ function renderAyo(g){if(!g||!Array.isArray(g.pits)||g.pits.length!==12)g=newAyo
 function poolRack(){const balls=[{id:0,x:.24,y:.5,vx:0,vy:0,r:.018,colour:"#fff",kind:"cue",pocketed:false}],cols=["#f4cf36","#2878e8","#df3156","#5d3b9c","#f28c28","#2eaa70","#7a4a2a"];let id=1;for(let row=0;row<5;row++)for(let col=0;col<=row;col++){const stripe=id%2===0;balls.push({id,x:.72+row*.033,y:.5+(col-row/2)*.038,vx:0,vy:0,r:.018,colour:cols[(id-1)%cols.length],kind:id===8?"eight":stripe?"stripe":"solid",pocketed:false});id++;}return balls;}
 function newPool(){return {balls:poolRack(),turn:0,winner:"",message:"Break shot: drag backwards from the cue ball and release to shoot.",shots:0,groups:["OPEN","OPEN"],phase:"ready",ballInHand:false};}
 function ensurePool(g){if(!g||typeof g!=="object"||!Array.isArray(g.balls)||!g.balls.length)return newPool();if(!Array.isArray(g.groups))g.groups=["OPEN","OPEN"];if(!g.phase)g.phase="ready";return g;}
-function renderPool(g){g=ensurePool(g);const p=me(),canShoot=g.turn===p&&!g.winner&&room.players.length===2&&g.phase==="ready";let h='<div class="pool-game"><div class="pool-top"><div><small>8-BALL · TWO-PLAYER</small><h2>🎱 8-BALL POOL</h2></div><div class="pool-turn '+(canShoot?'mine':'')+'">'+(g.winner?'GAME OVER':canShoot?'YOUR SHOT':esc(myName(g.turn).toUpperCase())+"'S SHOT")+'</div></div>';h+='<div class="pool-score"><span>'+myName(0)+' <b>'+esc(g.groups[0]||"OPEN")+'</b></span><strong>'+g.shots+' SHOTS</strong><span>'+myName(1)+' <b>'+esc(g.groups[1]||"OPEN")+'</b></span></div>';h+='<div class="pool-table-wrap"><canvas id="poolCanvas" width="1000" height="560" aria-label="Interactive eight ball pool table"></canvas><div class="pool-canvas-hint">Drag on the table to set your aim, then drag the cue inside the POWER meter on the right and release to shoot. After a foul, tap to place the cue ball.</div></div>';h+='<div class="pool-message">'+esc(g.message||"")+'</div><div class="pool-footer"><span>Solids vs stripes · pocket the 8 ball last.</span><button id="resetPool" class="secondary">↻ Rack again</button></div></div>';return h;}
+function renderPool(g){g=ensurePool(g);const p=me(),canShoot=g.turn===p&&!g.winner&&room.players.length===2&&g.phase==="ready";let h='<div class="pool-game"><div class="pool-top"><div><small>8-BALL · TWO-PLAYER</small><h2>🎱 8-BALL POOL</h2></div><div class="pool-turn '+(canShoot?'mine':'')+'">'+(g.winner?'GAME OVER':canShoot?'YOUR SHOT':esc(myName(g.turn).toUpperCase())+"'S SHOT")+'</div></div>';h+='<div class="pool-score"><span>'+myName(0)+' <b>'+esc(g.groups[0]||"OPEN")+'</b></span><strong>'+g.shots+' SHOTS</strong><span>'+myName(1)+' <b>'+esc(g.groups[1]||"OPEN")+'</b></span></div>';h+='<div class="pool-table-wrap"><canvas id="poolCanvas" width="1000" height="560" aria-label="Interactive eight ball pool table"></canvas><div class="pool-canvas-hint">'+(g.ballInHand?'Tap the table to place the cue ball.':'Use AIM to rotate the cue stick precisely. Set POWER, then press SHOOT.')+'</div></div>';h+='<div class="pool-controls"><div class="pool-control-block"><div class="pool-control-heading"><label for="poolAim">AIM DIRECTION</label><output id="poolAimValue">0°</output></div><input id="poolAim" class="pool-range aim-range" type="range" min="-180" max="180" step="1" value="0" aria-label="Aim direction"></div><div class="pool-control-block"><div class="pool-control-heading"><label for="poolPower">SHOT POWER</label><output id="poolPowerValue">45%</output></div><input id="poolPower" class="pool-range power-range" type="range" min="5" max="100" step="1" value="45" aria-label="Shot power"></div><button id="poolShoot" class="pool-shoot" '+(canShoot?'':'disabled')+'>🎱 SHOOT</button></div>';h+='<div class="pool-message">'+esc(g.message||"")+'</div><div class="pool-footer"><span>Solids vs stripes · pocket the 8 ball last.</span><button id="resetPool" class="secondary">↻ Rack again</button></div></div>';return h;}
 function shootPool(g,dx,dy){g=ensurePool(g);if(g.winner||g.turn!==me()||g.phase!=="ready")return;const cue=g.balls.find(b=>b.id===0&&!b.pocketed);if(!cue)return;const len=Math.hypot(dx,dy)||1,speed=Math.min(.045,Math.max(.006,len*.00008));cue.vx=dx/len*speed;cue.vy=dy/len*speed;g.phase="rolling";g.shots++;g.shotPocketed=g.balls.filter(b=>b.pocketed).map(b=>b.id);g.ballInHand=false;g.message=room.players[me()].name+" takes the shot.";}
 function settlePool(g){if(g.phase!=="rolling")return;const previous=g.shotPocketed||[],pocketed=g.balls.filter(b=>b.pocketed&&!previous.includes(b.id)),objects=pocketed.filter(b=>b.id!==0&&b.id!==8),cue=g.balls.find(b=>b.id===0);if(g.groups[0]==="OPEN"&&objects.length){const first=objects[0],grp=first.kind==="stripe"?"STRIPES":"SOLIDS";g.groups[g.turn]=grp;g.groups[1-g.turn]=grp==="SOLIDS"?"STRIPES":"SOLIDS";}const scratched=!!cue?.pocketed;if(scratched){cue.pocketed=false;cue.x=.24;cue.y=.5;cue.vx=cue.vy=0;g.ballInHand=true;g.message="Foul: cue ball scratched. Your opponent gets ball in hand.";g.turn=1-g.turn;}const eight=g.balls.find(b=>b.id===8);if(eight?.pocketed){const grp=g.groups[g.turn],left=g.balls.some(b=>!b.pocketed&&b.id!==0&&b.id!==8&&grp!=="OPEN"&&(grp==="SOLIDS"?b.kind==="solid":b.kind==="stripe"));g.winner=grp!=="OPEN"&&!left?room.players[g.turn].name:room.players[1-g.turn].name;g.message=g.winner===room.players[g.turn].name?"Eight ball legally pocketed — "+g.winner+" wins!":"Eight ball pocketed too early — "+g.winner+" wins!";}else if(!g.winner&&!scratched){const grp=g.groups[g.turn],scored=objects.some(b=>grp==="OPEN"||(grp==="SOLIDS"?b.kind==="solid":b.kind==="stripe"));if(!scored)g.turn=1-g.turn;g.message+=(scored?" Ball pocketed — shoot again!":" Turn passes to "+room.players[g.turn].name+".");}g.shotPocketed=[];g.phase="ready";}
 function initPoolCanvas(initial){
- const canvas=$("poolCanvas");if(!canvas)return;initial=ensurePool(initial);const ctx=canvas.getContext("2d");if(!ctx)return;const W=1000,H=560,m=44,tw=W-2*m,th=H-2*m,pockets=[[0,0],[.5,0],[1,0],[0,1],[.5,1],[1,1]],local=JSON.parse(JSON.stringify(initial));local.aimDx=1;local.aimDy=0;local.power=.45;local.powerDragging=false;local.stickDragging=false;local.aimSet=false;
+ const canvas=$("poolCanvas");if(!canvas)return;initial=ensurePool(initial);const ctx=canvas.getContext("2d");if(!ctx)return;const W=1000,H=560,m=44,tw=W-2*m,th=H-2*m,pockets=[[0,0],[.5,0],[1,0],[0,1],[.5,1],[1,1]],local=JSON.parse(JSON.stringify(initial));local.aimDx=1;local.aimDy=0;local.angleDeg=0;local.power=.45;local.aiming=false;local.placed=false;
  const draw=()=>{
  ctx.clearRect(0,0,W,H);
  // Dark premium cabinet and burgundy wooden rails, inspired by the reference table.
@@ -113,10 +113,7 @@ function initPoolCanvas(initial){
    const cx=m+cue.x*tw,cy=m+cue.y*th;
    // Keep a usable cue stick visible before the player touches the table.
    // While aiming, the pointer defines the shot direction; otherwise aim at the rack.
-   let dx=local.aiming?local.px-cx:local.aimDx;
-   let dy=local.aiming?local.py-cy:local.aimDy;
-   const len=Math.hypot(dx,dy)||1,ux=dx/len,uy=dy/len;
-   if(local.aiming){local.aimDx=ux;local.aimDy=uy;}
+   const angle=local.angleDeg*Math.PI/180,ux=Math.cos(angle),uy=Math.sin(angle);local.aimDx=ux;local.aimDy=uy;
    // Predict the cue ball's path to the first object ball or cushion.
    let rayLen=420,hitBall=null;
    for(const b of local.balls){if(b.id===0||b.pocketed)continue;const bx0=m+b.x*tw,by0=m+b.y*th,vx=ux,vy=uy,rx=bx0-cx,ry=by0-cy,proj=rx*vx+ry*vy,perp=Math.abs(rx*vy-ry*vx);if(proj>0&&perp<(b.r*tw+cue.r*tw*.9)&&proj<rayLen){rayLen=proj;hitBall=b;}}
@@ -127,11 +124,14 @@ function initPoolCanvas(initial){
     const hx=m+hitBall.x*tw,hy=m+hitBall.y*th,hr=hitBall.r*tw;
     // Highlight the ball being targeted and show its predicted travel direction.
     ctx.beginPath();ctx.arc(hx,hy,hr+5,0,Math.PI*2);ctx.strokeStyle="#fff7a8";ctx.lineWidth=3;ctx.stroke();
-    const objectLine=78;
-    ctx.save();ctx.strokeStyle="#ffe27a";ctx.lineWidth=3.5;ctx.lineCap="round";
-    ctx.beginPath();ctx.moveTo(hx+ux*(hr+2),hy+uy*(hr+2));ctx.lineTo(hx+ux*(hr+objectLine),hy+uy*(hr+objectLine));ctx.stroke();
-    const tx=hx+ux*(hr+objectLine),ty=hy+uy*(hr+objectLine),angle=Math.atan2(uy,ux);
-    ctx.beginPath();ctx.moveTo(tx,ty);ctx.lineTo(tx-10*Math.cos(angle-.55),ty-10*Math.sin(angle-.55));ctx.moveTo(tx,ty);ctx.lineTo(tx-10*Math.cos(angle+.55),ty-10*Math.sin(angle+.55));ctx.stroke();
+    // The object ball travels along the centre-to-centre collision normal, not
+    // necessarily the cue ball's incoming direction (important for cut shots).
+    const ox=(hitBall.x-cue.x)*tw,oy=(hitBall.y-cue.y)*th,olen=Math.hypot(ox,oy)||1,txu=ox/olen,tyu=oy/olen;
+    const objectLine=Math.min(210,Math.max(95,tw*.19));
+    ctx.save();ctx.strokeStyle="#ffe27a";ctx.lineWidth=5;ctx.lineCap="round";
+    ctx.beginPath();ctx.moveTo(hx+txu*(hr+3),hy+tyu*(hr+3));ctx.lineTo(hx+txu*(hr+objectLine),hy+tyu*(hr+objectLine));ctx.stroke();
+    const tx=hx+txu*(hr+objectLine),ty=hy+tyu*(hr+objectLine),targetAngle=Math.atan2(tyu,txu);
+    ctx.beginPath();ctx.moveTo(tx,ty);ctx.lineTo(tx-15*Math.cos(targetAngle-.55),ty-15*Math.sin(targetAngle-.55));ctx.moveTo(tx,ty);ctx.lineTo(tx-15*Math.cos(targetAngle+.55),ty-15*Math.sin(targetAngle+.55));ctx.stroke();
     ctx.restore();
    }
    // Cue stick points opposite the aim direction; pull-back amount follows selected power.
@@ -141,13 +141,7 @@ function initPoolCanvas(initial){
    ctx.beginPath();ctx.moveTo(bx,by);ctx.lineTo(ex,ey);ctx.strokeStyle="#d9b77b";ctx.lineWidth=7;ctx.stroke();
    ctx.beginPath();ctx.moveTo(bx,by);ctx.lineTo(bx-ux*13,by-uy*13);ctx.strokeStyle="#7a3522";ctx.lineWidth=11;ctx.stroke();
    ctx.beginPath();ctx.arc(cx,cy,16,0,Math.PI*2);ctx.strokeStyle="#ffffff88";ctx.lineWidth=2;ctx.stroke();
-   // Separate draggable power vessel; releasing its handle fires the shot.
-   const vx=963,top=155,bottom=405,handleY=bottom-local.power*(bottom-top);
-   ctx.save();ctx.fillStyle="#06111cdd";ctx.strokeStyle="#d6e2eb";ctx.lineWidth=2;ctx.beginPath();ctx.roundRect(vx-19,top,38,bottom-top,18);ctx.fill();ctx.stroke();
-   const pg=ctx.createLinearGradient(vx-8,0,vx+8,0);pg.addColorStop(0,"#754321");pg.addColorStop(.5,"#f2d6a0");pg.addColorStop(1,"#9b6336");
-   ctx.strokeStyle=pg;ctx.lineWidth=12;ctx.lineCap="round";ctx.beginPath();ctx.moveTo(vx,handleY-23);ctx.lineTo(vx,handleY+23);ctx.stroke();
-   ctx.fillStyle="#f6e3bc";ctx.beginPath();ctx.arc(vx,handleY,12,0,Math.PI*2);ctx.fill();ctx.fillStyle="#fff";ctx.font="bold 13px Arial";ctx.textAlign="center";ctx.fillText("POWER",vx,top-12);ctx.fillText(Math.round(local.power*100)+"%",vx,bottom+22);
-   ctx.restore();
+
   }
  }
  };
@@ -155,43 +149,21 @@ function initPoolCanvas(initial){
  const step=()=>{let moving=false;for(const b of local.balls){if(b.pocketed)continue;b.x+=b.vx;b.y+=b.vy;b.vx*=.986;b.vy*=.986;if(Math.abs(b.vx)+Math.abs(b.vy)>.0008)moving=true;else b.vx=b.vy=0;if(b.x<b.r){b.x=b.r;b.vx=Math.abs(b.vx)*.86;}if(b.x>1-b.r){b.x=1-b.r;b.vx=-Math.abs(b.vx)*.86;}if(b.y<b.r){b.y=b.r;b.vy=Math.abs(b.vy)*.86;}if(b.y>1-b.r){b.y=1-b.r;b.vy=-Math.abs(b.vy)*.86;}for(const [px,py] of pockets){if(Math.hypot((b.x-px),(b.y-py)*th/tw)<.033){b.pocketed=true;b.vx=b.vy=0;break;}}}for(let i=0;i<local.balls.length;i++)for(let j=i+1;j<local.balls.length;j++)collide(local.balls[i],local.balls[j]);return moving||local.balls.some(b=>Math.abs(b.vx)+Math.abs(b.vy)>.0008);};
  canvas.style.touchAction="none";
  const point=e=>{const r=canvas.getBoundingClientRect();return {x:(e.clientX-r.left)/r.width*W,y:(e.clientY-r.top)/r.height*H};};
+ const aimSlider=$("poolAim"),powerSlider=$("poolPower"),aimValue=$("poolAimValue"),powerValue=$("poolPowerValue"),shootButton=$("poolShoot");
+ if(aimSlider){aimSlider.value=String(local.angleDeg);if(aimValue)aimValue.textContent=Math.round(local.angleDeg)+"°";aimSlider.oninput=()=>{local.angleDeg=+aimSlider.value;local.aimDx=Math.cos(local.angleDeg*Math.PI/180);local.aimDy=Math.sin(local.angleDeg*Math.PI/180);if(aimValue)aimValue.textContent=Math.round(local.angleDeg)+"°";draw();};}
+ if(powerSlider){powerSlider.value=String(Math.round(local.power*100));if(powerValue)powerValue.textContent=Math.round(local.power*100)+"%";powerSlider.oninput=()=>{local.power=Math.max(.05,Math.min(1,+powerSlider.value/100));if(powerValue)powerValue.textContent=Math.round(local.power*100)+"%";draw();};}
+ if(shootButton)shootButton.onclick=()=>{const current=room?.state?.pool||initial;if(current.turn!==me()||current.winner||current.phase!=="ready"||room.players.length<2)return;const angle=local.angleDeg*Math.PI/180,dx=Math.cos(angle),dy=Math.sin(angle),power=local.power;change(s=>{const g=s.pool;if(g.turn!==me()||g.winner||g.phase!=="ready"||room.players.length<2)return;shootPool(g,dx*(80+power*520),dy*(80+power*520));});};
+ // Table taps are reserved for placing the cue ball after a foul; aiming is
+ // controlled by the wide, precise angle slider underneath the table.
  canvas.onpointerdown=e=>{
-  e.preventDefault();
   const current=room?.state?.pool||initial;
-  if(current.turn!==me()||current.winner||current.phase!=="ready"||room.players.length<2)return;
-  const p=point(e),cue=local.balls.find(b=>b.id===0&&!b.pocketed);if(!cue)return;
-  try{canvas.setPointerCapture(e.pointerId);}catch{}
-  // Dedicated power slider on the right: drag it and release to shoot.
-  if(p.x>925&&p.y>125&&p.y<435){local.powerDragging=true;local.aiming=false;local.power=Math.max(0,Math.min(1,(405-p.y)/250));draw();return;}
-  if(current.ballInHand){cue.x=Math.max(.04,Math.min(.96,(p.x-m)/tw));cue.y=Math.max(.04,Math.min(.96,(p.y-m)/th));local.placed=true;}
-  // The whole table is an easy aim surface: move your finger to rotate the stick.
-  local.aiming=true;local.px=p.x;local.py=p.y;
-  const cx=m+cue.x*tw,cy=m+cue.y*th,dx=p.x-cx,dy=p.y-cy,len=Math.hypot(dx,dy);
-  if(len>12){local.aimDx=dx/len;local.aimDy=dy/len;}
-  draw();
+  if(!current.ballInHand||current.turn!==me()||current.winner||current.phase!=="ready"||room.players.length<2)return;
+  e.preventDefault();const p=point(e),cue=local.balls.find(b=>b.id===0&&!b.pocketed);if(!cue)return;
+  cue.x=Math.max(.04,Math.min(.96,(p.x-m)/tw));cue.y=Math.max(.04,Math.min(.96,(p.y-m)/th));local.placed=true;draw();
  };
- canvas.onpointermove=e=>{
-  if(!local.aiming&&!local.powerDragging)return;e.preventDefault();const p=point(e);
-  if(local.powerDragging){local.power=Math.max(0,Math.min(1,(405-p.y)/250));draw();return;}
-  const cue=local.balls.find(b=>b.id===0&&!b.pocketed);if(!cue)return;
-  local.px=p.x;local.py=p.y;
-  const cx=m+cue.x*tw,cy=m+cue.y*th,dx=p.x-cx,dy=p.y-cy,len=Math.hypot(dx,dy);
-  if(len>12){local.aimDx=dx/len;local.aimDy=dy/len;}
-  draw();
- };
- canvas.onpointerup=e=>{
-  if(!local.aiming&&!local.powerDragging)return;e.preventDefault();
-  if(local.powerDragging){
-   local.powerDragging=false;
-   const power=local.power,dx=local.aimDx,dy=local.aimDy;
-   change(s=>{const g=s.pool;if(g.turn!==me()||g.winner||g.phase!=="ready"||room.players.length<2)return;const scale=80+power*520;shootPool(g,dx*scale,dy*scale);});
-   return;
-  }
-  const cue=local.balls.find(b=>b.id===0&&!b.pocketed);local.aiming=false;
-  if(local.placed&&cue){change(s=>{if(s.pool.turn===me()&&s.pool.phase==="ready"){const c=s.pool.balls.find(b=>b.id===0);if(c){c.x=cue.x;c.y=cue.y;s.pool.ballInHand=false;}}});local.placed=false;}
-  draw();
- };
- canvas.onpointercancel=()=>{local.aiming=false;draw();};
+ canvas.onpointermove=()=>{};
+ canvas.onpointerup=()=>{};
+ canvas.onpointercancel=()=>{local.placed=false;};
  if(initial.phase==="rolling"){let frames=0;const tick=()=>{const moving=step();draw();frames++;if(moving&&frames<1400){requestAnimationFrame(tick);return;}change(s=>{if(s.pool.phase!=="rolling")return;s.pool.balls=local.balls.map(b=>({...b,vx:0,vy:0}));settlePool(s.pool);});};requestAnimationFrame(tick);}else draw();
 }
 
