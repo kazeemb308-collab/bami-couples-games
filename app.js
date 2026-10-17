@@ -65,7 +65,60 @@ function shootPool(g,dx,dy){g=ensurePool(g);if(g.winner||g.turn!==me()||g.phase!
 function settlePool(g){if(g.phase!=="rolling")return;const previous=g.shotPocketed||[],pocketed=g.balls.filter(b=>b.pocketed&&!previous.includes(b.id)),objects=pocketed.filter(b=>b.id!==0&&b.id!==8),cue=g.balls.find(b=>b.id===0);if(g.groups[0]==="OPEN"&&objects.length){const first=objects[0],grp=first.kind==="stripe"?"STRIPES":"SOLIDS";g.groups[g.turn]=grp;g.groups[1-g.turn]=grp==="SOLIDS"?"STRIPES":"SOLIDS";}const scratched=!!cue?.pocketed;if(scratched){cue.pocketed=false;cue.x=.24;cue.y=.5;cue.vx=cue.vy=0;g.ballInHand=true;g.message="Foul: cue ball scratched. Your opponent gets ball in hand.";g.turn=1-g.turn;}const eight=g.balls.find(b=>b.id===8);if(eight?.pocketed){const grp=g.groups[g.turn],left=g.balls.some(b=>!b.pocketed&&b.id!==0&&b.id!==8&&grp!=="OPEN"&&(grp==="SOLIDS"?b.kind==="solid":b.kind==="stripe"));g.winner=grp!=="OPEN"&&!left?room.players[g.turn].name:room.players[1-g.turn].name;g.message=g.winner===room.players[g.turn].name?"Eight ball legally pocketed — "+g.winner+" wins!":"Eight ball pocketed too early — "+g.winner+" wins!";}else if(!g.winner&&!scratched){const grp=g.groups[g.turn],scored=objects.some(b=>grp==="OPEN"||(grp==="SOLIDS"?b.kind==="solid":b.kind==="stripe"));if(!scored)g.turn=1-g.turn;g.message+=(scored?" Ball pocketed — shoot again!":" Turn passes to "+room.players[g.turn].name+".");}g.shotPocketed=[];g.phase="ready";}
 function initPoolCanvas(initial){
  const canvas=$("poolCanvas");if(!canvas)return;const ctx=canvas.getContext("2d"),W=1000,H=560,m=44,tw=W-2*m,th=H-2*m,pockets=[[0,0],[.5,0],[1,0],[0,1],[.5,1],[1,1]],local=JSON.parse(JSON.stringify(initial));
- const draw=()=>{ctx.clearRect(0,0,W,H);ctx.fillStyle="#4b2919";ctx.fillRect(0,0,W,H);ctx.fillStyle="#075b3d";ctx.fillRect(m,m,tw,th);ctx.strokeStyle="#d6b06c";ctx.lineWidth=6;ctx.strokeRect(m,m,tw,th);pockets.forEach(([x,y])=>{ctx.beginPath();ctx.arc(m+x*tw,m+y*th,25,0,Math.PI*2);ctx.fillStyle="#07090c";ctx.fill();ctx.strokeStyle="#b98a4e";ctx.lineWidth=3;ctx.stroke();});local.balls.forEach(b=>{if(b.pocketed)return;const x=m+b.x*tw,y=m+b.y*th,r=b.r*tw;ctx.beginPath();ctx.arc(x+2,y+3,r,0,Math.PI*2);ctx.fillStyle="#0019";ctx.fill();ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fillStyle=b.kind==="eight"?"#101010":b.colour;ctx.fill();ctx.strokeStyle="#fff9";ctx.lineWidth=2;ctx.stroke();if(b.kind==="stripe"){ctx.beginPath();ctx.ellipse(x,y,r*.9,r*.45,0,0,Math.PI*2);ctx.fillStyle="#fff";ctx.fill();}ctx.beginPath();ctx.arc(x,y,r*.36,0,Math.PI*2);ctx.fillStyle="#fff";ctx.fill();ctx.fillStyle="#111";ctx.font="bold 13px Arial";ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(String(b.id),x,y);});if(local.aiming){const cue=local.balls.find(b=>b.id===0&&!b.pocketed);if(cue){ctx.beginPath();ctx.moveTo(m+cue.x*tw,m+cue.y*th);ctx.lineTo(local.px,local.py);ctx.setLineDash([8,8]);ctx.strokeStyle="#fff9";ctx.lineWidth=3;ctx.stroke();ctx.setLineDash([]);}}};
+ const draw=()=>{
+ ctx.clearRect(0,0,W,H);
+ // Dark premium cabinet and burgundy wooden rails, inspired by the reference table.
+ const cabinet=ctx.createLinearGradient(0,0,W,H);cabinet.addColorStop(0,"#080d19");cabinet.addColorStop(.5,"#263044");cabinet.addColorStop(1,"#050914");
+ ctx.fillStyle=cabinet;ctx.fillRect(0,0,W,H);
+ const wood=ctx.createLinearGradient(0,0,W,H);wood.addColorStop(0,"#210e17");wood.addColorStop(.18,"#8c2932");wood.addColorStop(.38,"#4b111c");wood.addColorStop(.62,"#a33a40");wood.addColorStop(.82,"#47111b");wood.addColorStop(1,"#160b13");
+ ctx.fillStyle=wood;ctx.fillRect(8,8,W-16,H-16);
+ ctx.strokeStyle="#d18c79";ctx.lineWidth=3;ctx.strokeRect(12,12,W-24,H-24);
+ // Rails and polished inner cushion.
+ ctx.fillStyle="#260d17";ctx.fillRect(27,27,W-54,H-54);
+ const felt=ctx.createRadialGradient(W*.5,H*.5,40,W*.5,H*.5,W*.72);
+ felt.addColorStop(0,"#48c7d8");felt.addColorStop(.58,"#168ba8");felt.addColorStop(1,"#07506d");
+ ctx.fillStyle=felt;ctx.fillRect(m,m,tw,th);
+ const cushion=ctx.createLinearGradient(0,m,0,H-m);cushion.addColorStop(0,"#081e2d");cushion.addColorStop(.18,"#1a6074");cushion.addColorStop(.5,"#0a3449");cushion.addColorStop(.82,"#185a70");cushion.addColorStop(1,"#061b2a");
+ ctx.fillStyle=cushion;ctx.fillRect(m-9,m-7,tw+18,th+14);
+ ctx.fillStyle=felt;ctx.fillRect(m,m,tw,th);
+ ctx.strokeStyle="#07121d";ctx.lineWidth=3;ctx.strokeRect(m,m,tw,th);
+ // Six deep pockets with chrome-like rims.
+ pockets.forEach(([px,py])=>{
+  const x=m+px*tw,y=m+py*th;
+  const rim=ctx.createRadialGradient(x-5,y-6,2,x,y,29);rim.addColorStop(0,"#f4f6f7");rim.addColorStop(.3,"#778895");rim.addColorStop(.65,"#d8e1e5");rim.addColorStop(1,"#243544");
+  ctx.beginPath();ctx.arc(x,y,27,0,Math.PI*2);ctx.fillStyle=rim;ctx.fill();
+  ctx.beginPath();ctx.arc(x,y,21,0,Math.PI*2);ctx.fillStyle="#02050a";ctx.fill();
+  ctx.beginPath();ctx.arc(x-5,y-6,13,0,Math.PI*2);ctx.fillStyle="#000";ctx.fill();
+ });
+ // Diamond sights along the rails.
+ for(let i=1;i<8;i++){const x=m+tw*i/8;ctx.save();ctx.translate(x,m-18);ctx.rotate(Math.PI/4);ctx.fillStyle="#d9dce0";ctx.fillRect(-3,-3,6,6);ctx.restore();ctx.save();ctx.translate(x,H-m+18);ctx.rotate(Math.PI/4);ctx.fillStyle="#d9dce0";ctx.fillRect(-3,-3,6,6);ctx.restore();}
+ for(let i=1;i<4;i++){const y=m+th*i/4;ctx.save();ctx.translate(m-18,y);ctx.rotate(Math.PI/4);ctx.fillStyle="#d9dce0";ctx.fillRect(-3,-3,6,6);ctx.restore();ctx.save();ctx.translate(W-m+18,y);ctx.rotate(Math.PI/4);ctx.fillStyle="#d9dce0";ctx.fillRect(-3,-3,6,6);ctx.restore();}
+ local.balls.forEach(b=>{
+  if(b.pocketed)return;
+  const x=m+b.x*tw,y=m+b.y*th,r=b.r*tw;
+  ctx.beginPath();ctx.arc(x+2,y+4,r*1.08,0,Math.PI*2);ctx.fillStyle="#00101c88";ctx.fill();
+  const ball=ctx.createRadialGradient(x-r*.38,y-r*.48,r*.04,x,y,r*1.15);
+  if(b.kind==="eight"){ball.addColorStop(0,"#565b64");ball.addColorStop(.3,"#17191e");ball.addColorStop(1,"#020306");}
+  else {ball.addColorStop(0,"#ffffff");ball.addColorStop(.18,b.colour);ball.addColorStop(.76,b.colour);ball.addColorStop(1,"#111923");}
+  ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fillStyle=ball;ctx.fill();
+  if(b.kind==="stripe"){ctx.save();ctx.beginPath();ctx.arc(x,y,r*.91,0,Math.PI*2);ctx.clip();ctx.fillStyle="#f7f8f8";ctx.fillRect(x-r,y-r*.38,r*2,r*.76);ctx.restore();}
+  ctx.strokeStyle="#ffffffaa";ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(x,y,r*.94,0,Math.PI*2);ctx.stroke();
+  ctx.beginPath();ctx.arc(x,y,r*.43,0,Math.PI*2);ctx.fillStyle="#fff";ctx.fill();
+  ctx.fillStyle="#111827";ctx.font="bold "+Math.max(9,Math.round(r*.82))+"px Arial";ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(String(b.id),x,y+.5);
+ });
+ if(local.aiming){
+  const cue=local.balls.find(b=>b.id===0&&!b.pocketed);
+  if(cue){
+   const cx=m+cue.x*tw,cy=m+cue.y*th,dx=local.px-cx,dy=local.py-cy,len=Math.hypot(dx,dy)||1,ux=dx/len,uy=dy/len;
+   ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(local.px,local.py);ctx.setLineDash([7,7]);ctx.strokeStyle="#f9ffffcc";ctx.lineWidth=2;ctx.stroke();ctx.setLineDash([]);
+   // Cue stick, with a dark butt and pale wooden shaft.
+   const bx=cx-ux*28,by=cy-uy*28,ex=local.px-ux*115,ey=local.py-uy*115;
+   ctx.lineCap="round";ctx.beginPath();ctx.moveTo(bx,by);ctx.lineTo(ex,ey);ctx.strokeStyle="#1c2028";ctx.lineWidth=8;ctx.stroke();
+   ctx.beginPath();ctx.moveTo(bx,by);ctx.lineTo(ex,ey);ctx.strokeStyle="#d9b77b";ctx.lineWidth=4;ctx.stroke();
+   ctx.beginPath();ctx.moveTo(bx,by);ctx.lineTo(bx-ux*13,by-uy*13);ctx.strokeStyle="#7a3522";ctx.lineWidth=8;ctx.stroke();
+  }
+ }
+ };
  const collide=(a,b)=>{if(a.pocketed||b.pocketed)return;const dx=b.x-a.x,dy=(b.y-a.y)*th/tw,d=Math.hypot(dx,dy),min=a.r+b.r;if(!d||d>=min)return;const nx=dx/d,ny=dy/d,overlap=min-d;a.x-=nx*overlap*.5;a.y-=ny*overlap*.5*tw/th;b.x+=nx*overlap*.5;b.y+=ny*overlap*.5*tw/th;const rel=(b.vx-a.vx)*nx+(b.vy-a.vy)*ny*th/tw;if(rel<0){a.vx+=rel*nx*.96;a.vy+=rel*ny*.96*tw/th;b.vx-=rel*nx*.96;b.vy-=rel*ny*.96*tw/th;}};
  const step=()=>{let moving=false;for(const b of local.balls){if(b.pocketed)continue;b.x+=b.vx;b.y+=b.vy;b.vx*=.986;b.vy*=.986;if(Math.abs(b.vx)+Math.abs(b.vy)>.0008)moving=true;else b.vx=b.vy=0;if(b.x<b.r){b.x=b.r;b.vx=Math.abs(b.vx)*.86;}if(b.x>1-b.r){b.x=1-b.r;b.vx=-Math.abs(b.vx)*.86;}if(b.y<b.r){b.y=b.r;b.vy=Math.abs(b.vy)*.86;}if(b.y>1-b.r){b.y=1-b.r;b.vy=-Math.abs(b.vy)*.86;}for(const [px,py] of pockets){if(Math.hypot((b.x-px),(b.y-py)*th/tw)<.033){b.pocketed=true;b.vx=b.vy=0;break;}}}for(let i=0;i<local.balls.length;i++)for(let j=i+1;j<local.balls.length;j++)collide(local.balls[i],local.balls[j]);return moving||local.balls.some(b=>Math.abs(b.vx)+Math.abs(b.vy)>.0008);};
  canvas.onpointerdown=e=>{if(initial.turn!==me()||initial.winner||initial.phase!=="ready")return;const r=canvas.getBoundingClientRect(),x=(e.clientX-r.left)/r.width*W,y=(e.clientY-r.top)/r.height*H,cue=local.balls.find(b=>b.id===0&&!b.pocketed);if(!cue)return;if(initial.ballInHand){cue.x=Math.max(.04,Math.min(.96,(x-m)/tw));cue.y=Math.max(.04,Math.min(.96,(y-m)/th));local.placed=true;}local.aiming=true;local.px=x;local.py=y;canvas.setPointerCapture(e.pointerId);draw();};
