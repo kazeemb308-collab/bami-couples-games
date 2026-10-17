@@ -46,6 +46,16 @@ function roomCode(){const chars="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";let out="";fo
 function configOK(){return firebaseConfig.apiKey&&!firebaseConfig.apiKey.includes("PASTE_")&&firebaseConfig.projectId&&!firebaseConfig.projectId.includes("PASTE_")&&firebaseConfig.appId&&!firebaseConfig.appId.includes("PASTE_");}
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
 function makeWhotDeck(){const a=[];whotSuitNumbers.forEach((numbers,s)=>numbers.forEach(n=>a.push({s,n})));for(let n=0;n<5;n++)a.push({s:5,n:20});return shuffle(a);}
+
+function newAyo(){return {pits:Array(12).fill(4),captured:[0,0],turn:0,winner:"",message:"Choose one of your six pits to sow. Capture seeds by ending a move with 2 or 3 in an opponent pit."};}
+function ayoSide(i,p){return p===0?i>=6:i<6;}
+function ayoMoveSim(pits,pit){const next=pits.slice();let seeds=next[pit],pos=pit;if(!seeds)return null;next[pit]=0;while(seeds>0){pos=(pos+1)%12;if(pos===pit)continue;next[pos]++;seeds--;}return {pits:next,last:pos};}
+function ayoLegalMoves(g,player){const side=player===0?[6,7,8,9,10,11]:[0,1,2,3,4,5],moves=side.filter(i=>g.pits[i]>0),fed=moves.filter(i=>{const r=ayoMoveSim(g.pits,i);return r&&r.pits.some((n,j)=>!ayoSide(j,player)&&n>0);});return fed.length?fed:moves;}
+function ayoFinish(g){const empty0=g.pits.slice(6).every(n=>n===0),empty1=g.pits.slice(0,6).every(n=>n===0);if(!empty0&&!empty1)return;g.captured[0]+=g.pits.slice(6).reduce((a,b)=>a+b,0);g.captured[1]+=g.pits.slice(0,6).reduce((a,b)=>a+b,0);g.pits=Array(12).fill(0);if(g.captured[0]===g.captured[1])g.winner="DRAW";else g.winner=room.players[g.captured[0]>g.captured[1]?0:1].name;g.message=g.winner==="DRAW"?"Ayo ends in a draw!":"Game over — "+g.winner+" wins with "+Math.max(...g.captured)+" seeds!";}
+function playAyo(g,pit,player){if(g.winner||g.turn!==player||!ayoLegalMoves(g,player).includes(pit))return;const moved=ayoMoveSim(g.pits,pit);if(!moved)return;g.pits=moved.pits;let pos=moved.last,captured=0;while(!ayoSide(pos,player)&&(g.pits[pos]===2||g.pits[pos]===3)){captured+=g.pits[pos];g.pits[pos]=0;pos=(pos+11)%12;}g.captured[player]+=captured;g.message=captured?room.players[player].name+" captured "+captured+" seeds!":room.players[player].name+" sowed the seeds.";ayoFinish(g);if(!g.winner){g.turn=1-player;if(!ayoLegalMoves(g,g.turn).length)ayoFinish(g);else if(!g.winner)g.message+=" "+room.players[g.turn].name+"'s turn.";}}
+function ayoSeedMarkup(n,pit){let out="";for(let i=0;i<Math.min(n,12);i++){const a=(i*37+pit*19)%100;out+='<i style="--sr:'+((a%50)-25)+'deg"></i>';}return out;}
+function renderAyo(g){if(!g||!Array.isArray(g.pits)||g.pits.length!==12)g=newAyo();const p=me(),legal=ayoLegalMoves(g,p),names=[myName(0),myName(1)];let h='<div class="ayo-game"><div class="ayo-topline"><div><small>TRADITIONAL STRATEGY</small><h2>🇳🇬 AYO</h2></div><div class="ayo-turn '+(g.turn===p?'mine':'')+'">'+(g.winner?'GAME OVER':g.turn===p?'YOUR TURN':esc(names[g.turn]+"'S TURN"))+'</div></div>';h+='<div class="ayo-score-row"><div class="ayo-score"><small>'+names[1]+' · TOP</small><b>'+g.captured[1]+'</b><span>captured seeds</span></div><div class="ayo-total">48 seeds</div><div class="ayo-score"><small>'+names[0]+' · BOTTOM</small><b>'+g.captured[0]+'</b><span>captured seeds</span></div></div>';h+='<div class="ayo-wood"><div class="ayo-player-label">'+names[1]+' <span>← sow this row</span></div><div class="ayo-pits ayo-opponent">';for(let i=0;i<6;i++){const n=g.pits[i];h+='<button class="ayo-pit" data-ayo-pit="'+i+'" '+(p===1&&g.turn===p&&legal.includes(i)&&!g.winner&&room.players.length===2?'':'disabled')+' aria-label="Opponent pit '+(i+1)+', '+n+' seeds"><span class="ayo-pit-number">'+(i+1)+'</span><span class="ayo-seeds">'+ayoSeedMarkup(n,i)+'</span><b>'+n+'</b></button>';}h+='</div><div class="ayo-middle"><span>●</span><b>OWARE BOARD</b><span>●</span></div><div class="ayo-pits ayo-player">';for(let i=11;i>=6;i--){const n=g.pits[i];h+='<button class="ayo-pit '+(legal.includes(i)&&p===0&&g.turn===p?'legal':'')+'" data-ayo-pit="'+i+'" '+(p===0&&g.turn===p&&legal.includes(i)&&!g.winner&&room.players.length===2?'':'disabled')+' aria-label="Your pit '+(i-5)+', '+n+' seeds"><span class="ayo-pit-number">'+(i-5)+'</span><span class="ayo-seeds">'+ayoSeedMarkup(n,i)+'</span><b>'+n+'</b></button>';}h+='</div><div class="ayo-player-label">'+names[0]+' <span>sow right → left</span></div></div><div class="ayo-message">'+esc(g.message||'')+'</div><div class="ayo-footer"><span>Tap a pit on your row. Capture 2 or 3 seeds on your final sow.</span><button id="resetAyo" class="secondary">↻ New game</button></div></div>';return h;}
+
 function newWhot(){
  return {deck:[],discard:[],hands:{"0":[],"1":[]},top:null,calledShape:null,turn:0,winner:"",pendingShapeIndex:null,pendingShapePlayer:null,pendingPenalty:null,pendingGeneralMarket:null,dealt:false,readyPlayers:[],message:"Both players tap the deck to deal your cards."};
 }
@@ -57,7 +67,7 @@ function dealWhot(g){
 }
 function newSnakes(){return {positions:[0,0],turn:0,dice:null,winner:"",message:"Tap the dice to start your race to 100."};}
 function newLudo(){return {tokens:{"0":[-1,-1,-1,-1],"1":[-1,-1,-1,-1],"2":[-1,-1,-1,-1],"3":[-1,-1,-1,-1]},turn:0,dice:null,roll:null,rolls:null,usedDice:[false,false],selectedDie:null,lastRoll:null,sixStreak:0,hasCaptured:{"0":false,"1":false},winner:"",message:"Tap the dice in the centre to roll. Choose one number, then tap a seed to move it."};}
-function initialState(){return {scores:[0,0],gameScores:{whot:[0,0],ludo:[0,0],ttt:[0,0],snakes:[0,0]},snakes:newSnakes(),ttt:{cells:Array(9).fill(""),turn:"X",winner:"",moves:0},whot:newWhot(),ludo:newLudo(),quiz:{index:0,answers:{},scores:[0,0]},truth:{turn:0,prompt:"Choose Truth or Dare to begin."}};}
+function initialState(){return {scores:[0,0],gameScores:{whot:[0,0],ludo:[0,0],ttt:[0,0],snakes:[0,0],ayo:[0,0]},snakes:newSnakes(),ayo:newAyo(),ttt:{cells:Array(9).fill(""),turn:"X",winner:"",moves:0},whot:newWhot(),ludo:newLudo(),quiz:{index:0,answers:{},scores:[0,0]},truth:{turn:0,prompt:"Choose Truth or Dare to begin."}};}
 function me(){return room?room.players.findIndex(p=>p.id===playerId):-1;}
 function myName(p){return esc((room.players[p]||{}).name||("Player "+(p+1)));}
 async function init(){
@@ -101,7 +111,7 @@ function renderRoom(){
 }
 async function change(fn){
  if(!room||!roomId)return;
- try{await runTransaction(db,async tx=>{const ref=doc(db,"coupleRooms",roomId),snap=await tx.get(ref);if(!snap.exists())throw Error("Room not found.");const data=snap.data(),oldState=structuredClone(data.state),state=structuredClone(data.state);fn(state,data);state.scores=Array.isArray(state.scores)?state.scores:[0,0];state.gameScores=state.gameScores&&typeof state.gameScores==="object"?state.gameScores:{whot:[0,0],ludo:[0,0],ttt:[0,0]};for(const key of ["whot","ludo","ttt"]){const oldWinner=oldState[key]?.winner,newWinner=state[key]?.winner;if(!oldWinner&&newWinner){const winnerIndex=data.players.findIndex(p=>p.name===newWinner);if(winnerIndex>=0){if(key==="whot"||key==="ludo"){state.gameScores[key]=Array.isArray(state.gameScores[key])?state.gameScores[key]:[0,0];state.gameScores[key][winnerIndex]=(state.gameScores[key][winnerIndex]||0)+1;}else state.scores[winnerIndex]=(state.scores[winnerIndex]||0)+1;}}}tx.update(ref,{state});});}
+ try{await runTransaction(db,async tx=>{const ref=doc(db,"coupleRooms",roomId),snap=await tx.get(ref);if(!snap.exists())throw Error("Room not found.");const data=snap.data(),oldState=structuredClone(data.state),state=structuredClone(data.state);fn(state,data);state.scores=Array.isArray(state.scores)?state.scores:[0,0];state.gameScores=state.gameScores&&typeof state.gameScores==="object"?state.gameScores:{whot:[0,0],ludo:[0,0],ttt:[0,0]};for(const key of ["whot","ludo","ttt"]){const oldWinner=oldState[key]?.winner,newWinner=state[key]?.winner;if(!oldWinner&&newWinner){const winnerIndex=data.players.findIndex(p=>p.name===newWinner);if(winnerIndex>=0){if(key==="whot"||key==="ludo"||key==="ayo"){state.gameScores[key]=Array.isArray(state.gameScores[key])?state.gameScores[key]:[0,0];state.gameScores[key][winnerIndex]=(state.gameScores[key][winnerIndex]||0)+1;}else state.scores[winnerIndex]=(state.scores[winnerIndex]||0)+1;}}}tx.update(ref,{state});});}
  catch(e){say(e.message);}
 }
 function cardLabel(c){return c.s===5?"20":String(c.n);}
@@ -301,7 +311,7 @@ function renderSnakes(g){
 }
 
 function finishedGameInfo(s){
- const key=activeGame==="whot"?"whot":activeGame==="ludo"?"ludo":activeGame==="snakes"?"snakes":activeGame==="ttt"?"ttt":null;
+ const key=activeGame==="whot"?"whot":activeGame==="ludo"?"ludo":activeGame==="snakes"?"snakes":activeGame==="ttt"?"ttt":activeGame==="ayo"?"ayo":null;
  if(!key)return null;
  const g=s[key];if(!g)return null;
  if(g.winner)return {key,winner:g.winner,draw:false};
@@ -313,11 +323,12 @@ function resetFinishedGame(s,key){
  else if(key==="ludo")s.ludo=newLudo();
  else if(key==="ttt")s.ttt={cells:Array(9).fill(""),turn:"X",winner:"",moves:0};
  else if(key==="snakes")s.snakes=newSnakes();
+ else if(key==="ayo")s.ayo=newAyo();
  s.rematchVotes=[];
 }
 function renderGame(){
  if(!room)return;const s=room.state,waiting=room.players.length<2?"Waiting for your partner to join…":"Playing with "+(room.players[1-me()]||{}).name;
- let h=(activeGame==="whot"||activeGame==="ludo"||activeGame==="snakes")?'<div class="whot-screen-header"><button id="backToGames" class="whot-back">← Games</button><div class="whot-brandline"><span>'+(activeGame==="whot"?"🃏":activeGame==="ludo"?"🎲":"🐍")+'</span><span><b>'+(activeGame==="whot"?"NAIJA WHOT":activeGame==="ludo"?"NAIJA LUDO":"SNAKE & LADDER")+'</b><small>BAMI ♥ OLUWATOSIN</small></span></div><div class="whot-online">'+(room.players.length<2?'WAITING…':'● 2 PLAYERS')+'</div></div>':'<div class="actions"><button id="backToGames" class="secondary">← All games</button></div><div class="eyebrow">NOW PLAYING</div><h2>'+({whot:"🃏 WHOT!",ludo:"🎲 Ludo",ttt:"⭕ Tic-Tac-Toe",quiz:"💗 Couples Quiz",truth:"🔥 Truth or Dare"}[activeGame])+'</h2><p class="muted">'+esc(waiting)+'</p>';
+ let h=(activeGame==="whot"||activeGame==="ludo"||activeGame==="snakes"||activeGame==="ayo")?'<div class="whot-screen-header"><button id="backToGames" class="whot-back">← Games</button><div class="whot-brandline"><span>'+(activeGame==="whot"?"🃏":activeGame==="ludo"?"🎲":activeGame==="snakes"?"🐍":"🫘")+'</span><span><b>'+(activeGame==="whot"?"NAIJA WHOT":activeGame==="ludo"?"NAIJA LUDO":activeGame==="snakes"?"SNAKE & LADDER":"AYO OWARE")+'</b><small>BAMI ♥ OLUWATOSIN</small></span></div><div class="whot-online">'+(room.players.length<2?'WAITING…':'● 2 PLAYERS')+'</div></div>':'<div class="actions"><button id="backToGames" class="secondary">← All games</button></div><div class="eyebrow">NOW PLAYING</div><h2>'+({whot:"🃏 WHOT!",ludo:"🎲 Ludo",ttt:"⭕ Tic-Tac-Toe",quiz:"💗 Couples Quiz",truth:"🔥 Truth or Dare"}[activeGame])+'</h2><p class="muted">'+esc(waiting)+'</p>';
  const scores=Array.isArray(s.scores)?s.scores:[0,0];if(activeGame!=="whot"&&activeGame!=="ludo")h+='<div class="overall-scoreboard"><span>🏆 MATCH SCORE</span><b>'+myName(0)+' '+(scores[0]||0)+'</b><i>—</i><b>'+myName(1)+' '+(scores[1]||0)+'</b></div>';
  if(activeGame==="ttt"){
   const g=s.ttt,turnIndex=g.turn==="X"?0:1,turnName=myName(turnIndex),done=!!g.winner||g.moves>=9;
@@ -330,6 +341,7 @@ function renderGame(){
  if(activeGame==="whot")h+=renderWhot(s.whot);
  if(activeGame==="ludo")h+=renderLudo(s.ludo);
  if(activeGame==="snakes")h+=renderSnakes(s.snakes);
+ if(activeGame==="ayo")h+=renderAyo(s.ayo);
  if(activeGame==="quiz"){
   const g=s.quiz,q=quiz[g.index%quiz.length];h+='<div class="quizcard"><div class="muted">Question '+(g.index%quiz.length+1)+' of '+quiz.length+'</div><h3>'+esc(q[0])+'</h3><p class="muted">Choose what you think your partner would answer, then talk about it.</p><div class="answers">'+q[1].map((a,i)=>'<button data-answer="'+i+'" '+(g.answers[me()]===i?'style="outline:2px solid #ff579f"':'')+' '+(room.players.length<2?'disabled':'')+'>'+esc(a)+'</button>').join("")+'</div><p class="muted">'+myName(0)+': '+g.scores[0]+' points · '+myName(1)+': '+g.scores[1]+' points</p><button id="nextQuiz" class="pink" '+((g.answers[0]===undefined||g.answers[1]===undefined||room.players.length<2)?'disabled':'')+'>Next question →</button> <button id="resetQuiz" class="secondary">Reset</button></div>';
  }
@@ -368,6 +380,8 @@ document.querySelectorAll("[data-ludo-die]").forEach(b=>b.onclick=()=>change(s=>
   document.querySelectorAll("[data-ludo-stack]").forEach(b=>b.onclick=()=>{const choices=JSON.parse(b.dataset.ludoStack),area=$("gameArea");if(!area)return;const overlay=document.createElement("div");overlay.className="ludo-seed-picker-overlay";overlay.innerHTML='<div class="ludo-seed-picker" role="dialog" aria-modal="true"><b>Which seed do you want to move?</b><div class="ludo-seed-picker-options">'+choices.map(x=>'<button type="button" class="ludo-seed-option '+LUDO_COLOURS[x.colour].css+'-token-bg" data-pick-colour="'+x.colour+'" data-pick-token="'+x.token+'">'+LUDO_COLOURS[x.colour].name+' seed '+(x.token+1)+'</button>').join("")+'</div><button type="button" class="secondary ludo-seed-cancel">Cancel</button></div>';area.appendChild(overlay);overlay.querySelector(".ludo-seed-cancel").onclick=()=>overlay.remove();overlay.querySelectorAll("[data-pick-colour]").forEach(opt=>opt.onclick=()=>{const colour=+opt.dataset.pickColour,token=+opt.dataset.pickToken;overlay.remove();change(s=>{const g=s.ludo,p=me();if(g.turn!==p||g.winner||room.players.length<2||g.selectedDie===null||g.dice===null)return;moveLudo(g,p,colour,token);});});});
  document.querySelectorAll("[data-token-owner]").forEach(b=>b.onclick=()=>change(s=>{const g=s.ludo,p=me(),owner=+b.dataset.tokenOwner,colour=+b.dataset.tokenColour,token=+b.dataset.token;if(owner!==p||g.turn!==p||g.winner||room.players.length<2)return;moveLudo(g,p,colour,token);}));
  const rl=$("resetLudo");if(rl)rl.onclick=()=>change(s=>{s.ludo=newLudo();});
+ document.querySelectorAll("[data-ayo-pit]").forEach(b=>b.onclick=()=>change(s=>{if(room.players.length<2)return;playAyo(s.ayo,+b.dataset.ayoPit,me());}));
+ const resetAyoBtn=$("resetAyo");if(resetAyoBtn)resetAyoBtn.onclick=()=>change(s=>{s.ayo=newAyo();});
  document.querySelectorAll("[data-answer]").forEach(b=>b.onclick=()=>change(s=>{if(room.players.length<2)return;if(Array.isArray(s.quiz.answers))s.quiz.answers={};s.quiz.answers[me()]=+b.dataset.answer;}));
  const nq=$("nextQuiz");if(nq)nq.onclick=()=>change(s=>{const g=s.quiz;if(g.answers[0]===undefined||g.answers[1]===undefined)return;if(g.answers[0]===g.answers[1]){g.scores[0]++;g.scores[1]++;}g.index=(g.index+1)%quiz.length;g.answers={};});
  const rq=$("resetQuiz");if(rq)rq.onclick=()=>change(s=>{s.quiz={index:0,answers:{},scores:[0,0]};});
