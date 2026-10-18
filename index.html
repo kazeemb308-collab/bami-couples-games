@@ -899,3 +899,20 @@ window.addEventListener("unhandledrejection", function (event) {
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
 <script type="module" src="./app.js?v=20261018chess4"></script></body></html>
+<style>
+
+/* CHESS: enter a true full-screen game view, matching the other board games */
+body:has(#gameArea .chess-shell){overflow:hidden!important}
+body:has(#gameArea .chess-shell) header,
+body:has(#gameArea .chess-shell) main>.hero,
+body:has(#gameArea .chess-shell) main>.overall-scoreboard{display:none!important}
+body:has(#gameArea .chess-shell) main{width:100%!important;max-width:none!important;margin:0!important;padding:0!important}
+#gameArea:has(.chess-shell){position:fixed!important;inset:0!important;z-index:1000!important;display:block!important;box-sizing:border-box!important;width:100vw!important;max-width:none!important;height:100vh!important;height:100dvh!important;margin:0!important;padding:0!important;border:0!important;border-radius:0!important;overflow-x:hidden!important;overflow-y:auto!important;background:#080f20!important}
+#gameArea:has(.chess-shell) .chess-shell{box-sizing:border-box!important;width:100%!important;max-width:1000px!important;min-height:100%!important;margin:0 auto!important;padding:max(12px,env(safe-area-inset-top)) 12px max(16px,env(safe-area-inset-bottom))!important;border-radius:0!important}
+#gameArea:has(.chess-shell) .whot-screen-header{position:sticky!important;top:0!important;z-index:50!important;margin:0 -12px 10px!important;padding:10px 12px!important;background:#080f20!important}
+@media(max-width:600px){
+ #gameArea:has(.chess-shell) .chess-shell{padding:max(8px,env(safe-area-inset-top)) 8px max(12px,env(safe-area-inset-bottom))!important}
+ #gameArea:has(.chess-shell) .whot-screen-header{margin:0 -8px 8px!important;padding:8px!important}
+}
+
+</style>
