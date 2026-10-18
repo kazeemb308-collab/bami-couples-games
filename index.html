@@ -810,6 +810,19 @@ input,textarea,[contenteditable="true"]{-webkit-user-select:text;user-select:tex
 .chess-side-column{display:grid;gap:12px}.chess-side-card,.chess-draw-offer{padding:14px;background:linear-gradient(145deg,#182139,#111729);border:1px solid #303b58;border-radius:15px}.chess-side-title{display:flex;justify-content:space-between;align-items:center;gap:10px;padding-bottom:11px;border-bottom:1px solid #303b58;font-size:10px;letter-spacing:1px}.chess-side-title span{font-size:9px;color:#9daac6;letter-spacing:0}.chess-move-list{max-height:240px;overflow:auto;padding:8px 0}.chess-move-row{display:grid;grid-template-columns:32px 1fr 1fr;gap:8px;padding:6px 4px;border-radius:5px;font-size:12px;font-variant-numeric:tabular-nums}.chess-move-row:nth-child(even){background:#ffffff08}.chess-move-no{color:#96a3c2}.chess-empty{padding:14px 5px;color:#9daac6;font-size:12px;line-height:1.5}.chess-pgn{border-top:1px solid #303b58;padding-top:9px;color:#8997b8;font-size:10px;line-height:1.6;overflow-wrap:anywhere;max-height:100px;overflow:auto}.chess-rules-list{padding-left:18px;margin:12px 0 0;color:#b7c0d6;font-size:11px;line-height:1.65}.chess-rules-list li{padding:3px 0}.chess-draw-offer{border-color:#c6a44c;background:#2b2618}.chess-draw-offer p{font-size:12px;color:#d6d1c3}.chess-draw-offer small{font-size:11px;color:#e0cc8c}
 @media(max-width:760px){.chess-layout{grid-template-columns:1fr}.chess-shell{padding:10px;border-radius:16px}.chess-board-frame{padding:18px 18px 6px}.chess-files.top{left:18px;right:18px}.chess-board{max-width:100%}.chess-side-column{grid-template-columns:1fr}.chess-move-list{max-height:180px}.chess-topbar{margin-bottom:12px}.chess-actions button{min-width:85px;padding:10px 7px}}
 
+
+/* Chess responsive correction: board first, text panels underneath on phones */
+@media (max-width: 900px) {
+  #gameArea .chess-shell { width:100%; max-width:100%; margin:0 auto; padding:10px; }
+  #gameArea .chess-layout { display:flex !important; flex-direction:column !important; width:100%; gap:14px; }
+  #gameArea .chess-play-column, #gameArea .chess-side-column { width:100%; min-width:0; max-width:100%; }
+  #gameArea .chess-board-frame { width:100%; max-width:min(100%, 620px); margin:12px auto; }
+  #gameArea .chess-side-column { display:flex !important; flex-direction:column !important; }
+  #gameArea .chess-side-card, #gameArea .chess-draw-offer { width:100%; }
+}
+@media (min-width: 901px) {
+  #gameArea .chess-layout { display:grid; grid-template-columns:minmax(0,1.25fr) minmax(240px,.75fr); }
+}
 </style>
 </head><body>
 <header><div class="brand">Bami <span>&</span> Oluwatosin <span>♥</span></div><div class="status" id="connectionStatus">Connecting…<br>Private couple room</div></header>
