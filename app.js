@@ -849,6 +849,7 @@ function scheduleComputerTurn(){
  else if(activeGame==="snakes")should=!s.snakes.winner&&s.snakes.turn===1;
  else if(activeGame==="ayo")should=!s.ayo.winner&&s.ayo.turn===1;
  else if(activeGame==="pool")should=!s.pool.winner&&s.pool.turn===1&&s.pool.phase==="ready";
+ else if(activeGame==="chess")should=!s.chess?.winner&&s.chess?.turn==="b";
  else if(activeGame==="whot")should=!s.whot.winner&&(s.whot.turn===1||!s.whot.dealt||s.whot.pendingShapePlayer===1);
  else if(activeGame==="ludo")should=!s.ludo.winner&&s.ludo.turn===1;
  else if(activeGame==="quiz")should=s.quiz.answers[0]!==undefined&&s.quiz.answers[1]===undefined;
@@ -865,6 +866,20 @@ function scheduleComputerTurn(){
     const g=st.snakes,roll=1+Math.floor(Math.random()*6);g.dice=roll;let next=g.positions[1];if(next+roll>100){g.message="Computer needs an exact roll to reach 100.";g.turn=0;return;}next+=roll;if(SNAKE_LADDERS[next])next=SNAKE_LADDERS[next];g.positions[1]=next;if(next===100){g.winner="Computer";g.message="Computer wins Snake and Ladder!";}else if(roll!==6)g.turn=0;g.message="Computer rolled "+roll+" and moved to "+next+".";
    }else if(activeGame==="ayo"){
     const g=st.ayo,moves=ayoLegalMoves(g,1);if(moves.length)playAyo(g,pick(moves),1);
+   }else if(activeGame==="chess"){
+    const g=st.chess;if(!g||g.winner||g.turn!=="b")return;
+    const game=loadChessState(g),moves=game.moves({verbose:true});if(!moves.length)return;
+    const captures=moves.filter(m=>m.captured),checks=moves.filter(m=>{try{game.move(m);const check=game.in_check();game.undo();return check;}catch(e){return false;}});
+    const pool=moves.filter(m=>m.flags.includes("c")||m.flags.includes("e"));
+    const chosen=(captures.length&&Math.random()<.72?captures:checks.length&&Math.random()<.55?checks:moves)[Math.floor(Math.random()*(captures.length&&Math.random()<.72?captures:checks.length&&Math.random()<.55?checks:moves).length)];
+    if(!chosen)return;
+    const move=game.move({from:chosen.from,to:chosen.to,promotion:chosen.promotion||"q"});if(!move)return;
+    g.pgn=game.pgn();g.fen=game.fen();g.turn=game.turn();g.moves=(g.moves||0)+1;g.lastMove={from:move.from,to:move.to,san:move.san};g.drawOffer=null;
+    if(game.in_checkmate()){g.winner="Computer";g.status="Checkmate — Computer wins!";}
+    else if(game.in_stalemate()){g.winner="DRAW";g.status="Stalemate — draw.";}
+    else if(game.in_draw()){g.winner="DRAW";g.status="Draw by repetition, 50-move rule or insufficient material.";}
+    else if(game.in_check()){g.status="White is in check.";}
+    else g.status="White to move"+(move.flags.includes("k")||move.flags.includes("q")?" · Castling":move.flags.includes("e")?" · En passant":move.promotion?" · Pawn promoted":"")+".";
    }else if(activeGame==="pool"){
     const g=st.pool,cue=g.balls.find(b=>b.id===0&&!b.pocketed);if(!cue)return;const angle=Math.random()*Math.PI*2,speed=.012+Math.random()*.025;cue.vx=Math.cos(angle)*speed;cue.vy=Math.sin(angle)*speed;g.phase="rolling";g.shots++;g.shotPocketed=g.balls.filter(b=>b.pocketed).map(b=>b.id);g.message="Computer takes the shot.";
    }else if(activeGame==="whot"){
