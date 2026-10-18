@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#090b18"><title>Bami & Oluwatosin ❤️</title>
 <style>
 :root{--bg:#090b18;--panel:#151b30;--line:#303958;--text:#f5f6ff;--muted:#a7b0ca;--pink:#ff579f;--cyan:#63e6ff;--gold:#ffd166}
@@ -785,6 +785,11 @@ body:has(#gameArea:not(.hidden) .ttt-screen){overflow:hidden}
 .whot-challenge-done{width:100%;padding:14px;background:linear-gradient(135deg,#ff8dbb,#ff579f);color:#301024;font-weight:1000;border-radius:13px}
 @media(prefers-reduced-motion:reduce){.whot-challenge-option:active{transform:none}}
 
+
+/* Disable page zooming, text selection, and copy actions while preserving form controls */
+html,body{touch-action:pan-x pan-y;-webkit-text-size-adjust:100%}
+body,*{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+input,textarea,[contenteditable="true"]{-webkit-user-select:text;user-select:text;-webkit-touch-callout:default}
 </style>
 </head><body>
 <header><div class="brand">Bami <span>&</span> Oluwatosin <span>♥</span></div><div class="status" id="connectionStatus">Connecting…<br>Private couple room</div></header>
@@ -812,5 +817,19 @@ window.addEventListener("unhandledrejection", function (event) {
   status.textContent = "App startup error";
   message.textContent = "Startup failed: " + reason;
 });
+</script>
+<script>
+(function(){
+  ["copy","cut","contextmenu","dragstart"].forEach(function(type){
+    document.addEventListener(type,function(event){event.preventDefault();},true);
+  });
+  document.addEventListener("selectstart",function(event){
+    if(event.target && event.target.closest && event.target.closest("input,textarea,[contenteditable=\"true\"]")) return;
+    event.preventDefault();
+  },true);
+  document.addEventListener("gesturestart",function(event){event.preventDefault();}, {passive:false});
+  document.addEventListener("gesturechange",function(event){event.preventDefault();}, {passive:false});
+  document.addEventListener("gestureend",function(event){event.preventDefault();}, {passive:false});
+})();
 </script>
 <script type="module" src="./app.js?v=20261018poolrules6"></script></body></html>
