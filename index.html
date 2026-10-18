@@ -719,11 +719,13 @@ body:has(#gameArea:not(.hidden) .ttt-screen){overflow:hidden}
 #gameArea:has(.pool-game) .pool-controls .power-range:active{cursor:grabbing}
 
 /* WHOT flights use real source/destination positions and remain independent of live table rerenders. */
-.whot-flight-overlay{position:fixed!important;z-index:10000!important;margin:0!important;min-width:0!important;min-height:0!important;pointer-events:none!important;overflow:hidden!important;transform-origin:center center;box-shadow:0 8px 22px #001b!important;border-radius:10px!important}
+.whot-flight-overlay{position:fixed!important;z-index:10000!important;margin:0!important;min-width:0!important;min-height:0!important;pointer-events:none!important;overflow:hidden!important;transform-origin:center center;box-shadow:0 8px 22px #001b!important;border-radius:10px!important;will-change:transform,opacity}
+.whot-flight-overlay.whot-flight-running{animation:whotLightFlight .48s cubic-bezier(.2,.72,.25,1) forwards}
+@keyframes whotLightFlight{from{transform:translate3d(0,0,0) scale(1) rotate(-6deg);opacity:.98}to{transform:translate3d(var(--whot-fly-x),var(--whot-fly-y),0) scale(var(--whot-fly-sx),var(--whot-fly-sy));opacity:.12}}
 .whot-flight-overlay .card-caption{bottom:27px!important}
 .whot-flight-overlay.card-back-flight{display:grid;place-items:center;background:repeating-linear-gradient(45deg,#8d173d 0 5px,#b82d55 5px 10px)!important;color:#ffe9a9!important;border:2px solid #f8e2b5!important}
 .card-back-flight-mark{display:grid;place-items:center;width:45%;height:40%;border:2px solid #ffe9a9;border-radius:50%;font:900 22px Georgia,serif}
-@media(prefers-reduced-motion:reduce){.whot-flight-overlay{animation:none!important;transition:none!important}}
+@media(prefers-reduced-motion:reduce){.whot-flight-overlay.whot-flight-running{animation-duration:.01ms!important}}
 
 </style>
 </head><body>
@@ -753,4 +755,4 @@ window.addEventListener("unhandledrejection", function (event) {
   message.textContent = "Startup failed: " + reason;
 });
 </script>
-<script type="module" src="./app.js?v=20261018flightfix3"></script></body></html>
+<script type="module" src="./app.js?v=20261018smoothfix4"></script></body></html>
