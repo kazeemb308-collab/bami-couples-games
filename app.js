@@ -421,6 +421,13 @@ function playPendingWhotAnimations(){
  if(move)requestAnimationFrame(()=>launchWhotFlight(move,"play"));
  else if(draw)requestAnimationFrame(()=>launchWhotFlight(draw,"draw"));
 }
+function launchWhotSpecialEffect(move){
+ if(!move?.card)return;
+ const effects={1:["✨","HOLD ON!"],2:["💥","PICK TWO!"],5:["💥","PICK THREE!"],8:["⚡","SUSPENSION!"],14:["🛍️","GENERAL MARKET!"],20:["🌟","WHOT 20!"]};
+ const effect=move.card.s===5?effects[20]:effects[move.card.n];if(!effect)return;
+ const bubble=document.createElement("div");bubble.className="whot-special-float";bubble.textContent=effect[0]+" "+effect[1];bubble.setAttribute("aria-hidden","true");document.body.appendChild(bubble);
+ const remove=()=>bubble.remove();bubble.addEventListener("animationend",remove,{once:true});setTimeout(remove,1050);
+}
 function launchWhotReaction(reaction){
  if(!reaction||!reaction.id||!reaction.emoji||reaction.id===lastWhotReactionSeen)return;
  lastWhotReactionSeen=reaction.id;
@@ -429,7 +436,7 @@ function launchWhotReaction(reaction){
 }
 function renderWhot(g){
  if(g.lastReaction?.id&&g.lastReaction.id!==lastWhotReactionSeen)requestAnimationFrame(()=>launchWhotReaction(g.lastReaction));
- if(g.lastMove?.id&&g.lastMove.id!==lastWhotMoveSeen){lastWhotMoveSeen=g.lastMove.id;if(!whotAnimatedMoveIds.has(g.lastMove.id)){whotAnimatedMoveIds.add(g.lastMove.id);if(whotAnimatedMoveIds.size>40)whotAnimatedMoveIds.delete(whotAnimatedMoveIds.values().next().value);pendingWhotMoveAnimation={...g.lastMove};}}
+ if(g.lastMove?.id&&g.lastMove.id!==lastWhotMoveSeen){lastWhotMoveSeen=g.lastMove.id;if(!whotAnimatedMoveIds.has(g.lastMove.id)){whotAnimatedMoveIds.add(g.lastMove.id);if(whotAnimatedMoveIds.size>40)whotAnimatedMoveIds.delete(whotAnimatedMoveIds.values().next().value);pendingWhotMoveAnimation={...g.lastMove};launchWhotSpecialEffect(g.lastMove);}}
  if(g.lastDraw?.id&&g.lastDraw.id!==lastWhotDrawSeen){lastWhotDrawSeen=g.lastDraw.id;if(!whotAnimatedDrawIds.has(g.lastDraw.id)){whotAnimatedDrawIds.add(g.lastDraw.id);if(whotAnimatedDrawIds.size>40)whotAnimatedDrawIds.delete(whotAnimatedDrawIds.values().next().value);pendingWhotDrawAnimation={...g.lastDraw};}}
  const p=me(),hand=g.hands[p]||[],opponent=1-p,opponentHand=g.hands[opponent]||[],top=g.top,dealt=!!top;
  const scores=(room.state.gameScores&&Array.isArray(room.state.gameScores.whot))?room.state.gameScores.whot:[0,0];
