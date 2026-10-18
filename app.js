@@ -1,7 +1,7 @@
 let initializeApp, getAuth, signInAnonymously, getFirestore, doc, setDoc, getDoc, onSnapshot, runTransaction, serverTimestamp, firebaseConfig;
 const $ = id => document.getElementById(id);
 let db = null, auth = null, roomId = null, playerId = null, room = null, unsubscribe = null, activeGame = "whot", gameOpen = false, gameLaunchId = null, roomSnapshotInitialized = false, botThinking = false;
-let lastWhotMoveSeen = null, activeWhotAnimationId = null, whotAnimationTimer = null, lastWhotDrawSeen = null, activeWhotDrawAnimationId = null, whotDrawAnimationTimer = null;
+let lastWhotMoveSeen = null, lastWhotDrawSeen = null, pendingWhotMoveAnimation = null, pendingWhotDrawAnimation = null;
 const shapeNames = ["Circle","Triangle","Cross","Square","Star"];
 const shapeGlyphs = ["○","△","×","□","☆"];
 const whotNumbers = [1,2,3,4,5,7,8,10,11,12,13,14];
@@ -258,7 +258,7 @@ function playWhotCard(g,p,i,chosenShape){
  if(c.s===5&&chosenShape===undefined){g.pendingShapeIndex=i;g.pendingShapePlayer=p;g.message="Choose the shape you want to call with WHOT 20.";return false;}
  if(c.s===5&&(!Number.isInteger(chosenShape)||chosenShape<0||chosenShape>4))return false;
  const oldPenalty=g.pendingPenalty?{...g.pendingPenalty}:null;
- hand.splice(i,1);g.discard.push(g.top);g.top=c;g.lastMove={id:String(Date.now())+"-"+Math.random().toString(36).slice(2),card:{...c},player:p};g.calledShape=c.s===5?chosenShape:null;g.pendingShapeIndex=null;g.pendingShapePlayer=null;g.pendingPenalty=null;
+ hand.splice(i,1);g.discard.push(g.top);g.top=c;g.lastMove={id:String(Date.now())+"-"+Math.random().toString(36).slice(2),card:{...c},player:p,index:i};g.calledShape=c.s===5?chosenShape:null;g.pendingShapeIndex=null;g.pendingShapePlayer=null;g.pendingPenalty=null;
  if(!hand.length){g.winner=room.players[p].name;g.message=g.winner+" wins Naija WHOT! 🎉";return true;}
  const opponent=1-p;
  if(oldPenalty){
@@ -357,11 +357,58 @@ function moveLudo(g,p,colour,tokenIndex){
  if(!g.winner&&!extra)g.turn=1-p;
  else if(!g.winner)g.message+=(captured?" Capture bonus!":"")+" Roll again!";
 }
+
+function whotRectCenter(el){
+ if(!el)return null;const r=el.getBoundingClientRect();
+ if(!r.width||!r.height)return null;
+ return {left:r.left,top:r.top,width:r.width,height:r.height,cx:r.left+r.width/2,cy:r.top+r.height/2};
+}
+function whotAnimationRect(selector,preferredIndex){
+ const root=$("gameArea");if(!root)return null;
+ const el=root.querySelector(selector);if(!el)return null;
+ if(Number.isInteger(preferredIndex)&&el.children?.length){
+  const child=el.children[Math.max(0,Math.min(preferredIndex,el.children.length-1))];
+  if(child){const r=whotRectCenter(child);if(r)return r;}
+ }
+ return whotRectCenter(el);
+}
+function launchWhotFlight(event,kind){
+ if(!event?.card||!$("gameArea"))return;
+ const localPlayer=me(),isLocal=event.player===localPlayer;
+ let from,to,face;
+ if(kind==="play"){
+  from=isLocal?whotAnimationRect(".whot-hand",event.index):whotAnimationRect(".opponent-hand");
+  to=whotAnimationRect(".discard-pile .top-playing-card");
+  face=whotFace(event.card,event.card.s===5?"WHOT":shapeNames[event.card.s]);
+ }else{
+  from=whotAnimationRect("#drawPile");
+  to=isLocal?whotAnimationRect(".whot-hand",0):whotAnimationRect(".opponent-hand",0);
+  face=isLocal?whotFace(event.card,event.card.s===5?"WHOT":shapeNames[event.card.s]):'<span class="card-back-flight-mark">W</span>';
+ }
+ if(!from||!to)return;
+ const card=document.createElement("div");
+ card.className="playingcard whot-flight-overlay "+(kind==="draw"&&!isLocal?"card-back-flight":event.card.s===5?"whot-card":"suit-"+event.card.s);
+ card.setAttribute("aria-hidden","true");card.innerHTML=face;
+ const width=from.width,height=from.height;
+ Object.assign(card.style,{left:from.left+"px",top:from.top+"px",width:width+"px",height:height+"px"});
+ document.body.appendChild(card);
+ const dx=to.cx-from.cx,dy=to.cy-from.cy,sx=Math.max(.35,to.width/width),sy=Math.max(.35,to.height/height);
+ const animation=card.animate([
+  {transform:"translate(0,0) scale(1,1) rotate(-7deg)",opacity:.98},
+  {transform:"translate("+dx+"px,"+dy+"px) scale("+sx+","+sy+") rotate(0deg)",opacity:kind==="play"?.22:0}
+ ],{duration:680,easing:"cubic-bezier(.2,.75,.25,1)",fill:"forwards"});
+ animation.finished.then(()=>card.remove()).catch(()=>card.remove());
+}
+function playPendingWhotAnimations(){
+ const move=pendingWhotMoveAnimation,draw=pendingWhotDrawAnimation;
+ pendingWhotMoveAnimation=null;pendingWhotDrawAnimation=null;
+ if(move)requestAnimationFrame(()=>launchWhotFlight(move,"play"));
+ if(draw)requestAnimationFrame(()=>launchWhotFlight(draw,"draw"));
+}
+
 function renderWhot(g){
- if(g.lastMove?.id&&g.lastMove.id!==lastWhotMoveSeen){lastWhotMoveSeen=g.lastMove.id;activeWhotAnimationId=g.lastMove.id;if(whotAnimationTimer)clearTimeout(whotAnimationTimer);const moveId=g.lastMove.id;whotAnimationTimer=setTimeout(()=>{if(activeWhotAnimationId===moveId){activeWhotAnimationId=null;if(gameOpen&&activeGame==="whot")renderGame();}},760);}
- if(g.lastDraw?.id&&g.lastDraw.id!==lastWhotDrawSeen){lastWhotDrawSeen=g.lastDraw.id;activeWhotDrawAnimationId=g.lastDraw.id;if(whotDrawAnimationTimer)clearTimeout(whotDrawAnimationTimer);const drawId=g.lastDraw.id;whotDrawAnimationTimer=setTimeout(()=>{if(activeWhotDrawAnimationId===drawId){activeWhotDrawAnimationId=null;if(gameOpen&&activeGame==="whot")renderGame();}},760);}
- const moving=g.lastMove&&activeWhotAnimationId===g.lastMove.id?g.lastMove:null;
- const drawing=g.lastDraw&&activeWhotDrawAnimationId===g.lastDraw.id?g.lastDraw:null;
+ if(g.lastMove?.id&&g.lastMove.id!==lastWhotMoveSeen){lastWhotMoveSeen=g.lastMove.id;pendingWhotMoveAnimation={...g.lastMove};}
+ if(g.lastDraw?.id&&g.lastDraw.id!==lastWhotDrawSeen){lastWhotDrawSeen=g.lastDraw.id;pendingWhotDrawAnimation={...g.lastDraw};}
  const p=me(),hand=g.hands[p]||[],opponent=1-p,opponentHand=g.hands[opponent]||[],top=g.top,dealt=!!top;
  const scores=(room.state.gameScores&&Array.isArray(room.state.gameScores.whot))?room.state.gameScores.whot:[0,0];
  const playable=dealt&&hand.some(c=>whotCanPlay(c,g)),ready=(g.readyPlayers||[]).includes(p),mustPickMarket=g.pendingGeneralMarket===p;
@@ -381,8 +428,6 @@ function renderWhot(g){
    h+='<div class="cards whot-hand">'+hand.map((c,i)=>'<button class="playingcard '+(c.s===5?"whot-card":"suit-"+c.s)+'" data-card="'+i+'" aria-label="'+esc(cardLabel(c)+" "+(c.s===5?"WHOT":shapeNames[c.s]))+'" '+(g.turn!==p||g.winner||room.players.length<2||g.pendingShapePlayer!==null||g.pendingGeneralMarket===p?'disabled':'')+'>'+whotFace(c,c.s===5?"WHOT":shapeNames[c.s])+'</button>').join("")+'</div>';
   h+='<div class="whot-status-message">'+esc(g.message||"")+'</div>';
  }
- if(moving&&moving.card)h+='<div class="playingcard whot-fly-card '+(moving.card.s===5?"whot-card":"suit-"+moving.card.s)+' '+(moving.player===0?"from-bottom":"from-top")+'" aria-hidden="true">'+whotFace(moving.card,moving.card.s===5?"WHOT":shapeNames[moving.card.s])+'</div>';
- if(drawing&&drawing.card)h+='<div class="playingcard whot-fly-card whot-draw-fly-card '+(drawing.card.s===5?"whot-card":"suit-"+drawing.card.s)+' '+(drawing.player===0?"to-bottom":"to-top")+'" aria-hidden="true">'+whotFace(drawing.card,drawing.card.s===5?"WHOT":shapeNames[drawing.card.s])+'</div>';
  h+='</div>';return h;
 }
 function ludoDieFace(n){return n===null||n===undefined?"🎲":(["","⚀","⚁","⚂","⚃","⚄","⚅"][n]||"🎲");}
@@ -489,7 +534,7 @@ function renderGame(){
   const result=finished.draw?"GAME OVER! 🤝 IT’S A DRAW":isWinner?"GAME OVER! 🎉 YOU WIN!":"GAME OVER! ❌ YOU LOST";
   h+='<div class="rematch-overlay" role="dialog" aria-modal="true" aria-label="Game over"><div class="rematch-panel"><div class="rematch-result">'+result+'</div><p>'+(finished.draw?'Nobody won this round. Play again?':esc(finished.winner)+' won the match!')+'</p><button id="rematchButton" class="pink" '+(alreadyVoted?'disabled':'')+'>'+(alreadyVoted?'✓ Rematch requested':'↻ Rematch')+'</button><div class="rematch-waiting">'+votes.length+' of 2 players ready'+(alreadyVoted?' · Waiting for your partner…':' · Both players must press Rematch')+'</div></div></div>';
  }
- $("gameArea").innerHTML=h;wireGame();scheduleComputerTurn();
+ $("gameArea").innerHTML=h;if(activeGame==="whot")playPendingWhotAnimations();wireGame();scheduleComputerTurn();
 }
 function wireGame(){
  const rematch=$( "rematchButton" );
