@@ -718,23 +718,12 @@ body:has(#gameArea:not(.hidden) .ttt-screen){overflow:hidden}
 #gameArea:has(.pool-game) .pool-controls .power-range{height:54px;accent-color:#ffe27a;cursor:grab}
 #gameArea:has(.pool-game) .pool-controls .power-range:active{cursor:grabbing}
 
-/* Live Naija WHOT card-play animation: both players see the played card travel to the discard pile. */
-.naija-whot-table{position:relative}
-.naija-whot-table .whot-fly-card{position:absolute;z-index:50;left:50%;top:48%;width:82px;min-width:82px;height:112px;min-height:112px;pointer-events:none;animation-duration:.68s;animation-timing-function:cubic-bezier(.2,.75,.25,1);animation-fill-mode:both;box-shadow:0 8px 18px #001b}
-.naija-whot-table .whot-fly-card.from-top{animation-name:whotCardFromTop}
-.naija-whot-table .whot-fly-card.from-bottom{animation-name:whotCardFromBottom}
-.naija-whot-table .whot-fly-card .card-caption{bottom:27px!important}
-@keyframes whotCardFromTop{0%{transform:translate(-50%,-165px) rotate(13deg) scale(.72);opacity:.15}18%{opacity:1}78%{opacity:1}100%{transform:translate(-50%,-50%) rotate(0) scale(1);opacity:0}}
-@keyframes whotCardFromBottom{0%{transform:translate(-50%,120px) rotate(-13deg) scale(.72);opacity:.15}18%{opacity:1}78%{opacity:1}100%{transform:translate(-50%,-50%) rotate(0) scale(1);opacity:0}}
-@media(prefers-reduced-motion:reduce){.naija-whot-table .whot-fly-card{animation-duration:.01ms}}
-
-
-/* Market draw animation: card visibly travels from the Market pile into the drawing player's hand. */
-.naija-whot-table .whot-draw-fly-card.from-market{animation-name:whotCardFromMarket}
-.naija-whot-table .whot-draw-fly-card.to-bottom{animation-name:whotCardToBottom}
-.naija-whot-table .whot-draw-fly-card.to-top{animation-name:whotCardToTop}
-@keyframes whotCardToBottom{0%{transform:translate(-165px,-50%) rotate(-12deg) scale(.72);opacity:.1}18%{opacity:1}75%{opacity:1}100%{transform:translate(-50%,120px) rotate(7deg) scale(.82);opacity:0}}
-@keyframes whotCardToTop{0%{transform:translate(-165px,-50%) rotate(-12deg) scale(.72);opacity:.1}18%{opacity:1}75%{opacity:1}100%{transform:translate(-50%,-150px) rotate(-7deg) scale(.82);opacity:0}}
+/* WHOT flights use real source/destination positions and remain independent of live table rerenders. */
+.whot-flight-overlay{position:fixed!important;z-index:10000!important;margin:0!important;min-width:0!important;min-height:0!important;pointer-events:none!important;overflow:hidden!important;transform-origin:center center;box-shadow:0 8px 22px #001b!important;border-radius:10px!important}
+.whot-flight-overlay .card-caption{bottom:27px!important}
+.whot-flight-overlay.card-back-flight{display:grid;place-items:center;background:repeating-linear-gradient(45deg,#8d173d 0 5px,#b82d55 5px 10px)!important;color:#ffe9a9!important;border:2px solid #f8e2b5!important}
+.card-back-flight-mark{display:grid;place-items:center;width:45%;height:40%;border:2px solid #ffe9a9;border-radius:50%;font:900 22px Georgia,serif}
+@media(prefers-reduced-motion:reduce){.whot-flight-overlay{animation:none!important;transition:none!important}}
 
 </style>
 </head><body>
