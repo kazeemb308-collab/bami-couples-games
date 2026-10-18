@@ -5,6 +5,7 @@ let lastWhotMoveSeen = null, lastWhotDrawSeen = null, pendingWhotMoveAnimation =
 let lastWhotReactionSeen = null;
 const whotReactions = [{emoji:"😍",label:"Love"},{emoji:"😂",label:"LOL"},{emoji:"😈",label:"Naughty"},{emoji:"👏",label:"Nice"},{emoji:"😭",label:"Ouch"},{emoji:"🔥",label:"Fire"}];
 const shapeNames = ["Circle","Triangle","Cross","Square","Star"];
+const whotWinnerChallenges = ["Give your partner three sincere compliments.","Tell your partner your favourite memory together.","Send a 10-second voice note saying why you love them.","Give your partner a cute new nickname and explain it.","Name one thing your partner does that always makes you smile.","Plan a tiny date you can do together this week.","Say one thing you appreciate but don't say often enough.","Describe your partner using only three emojis.","Tell your partner one thing you want to experience together.","Sing or type two lines of a love song for your partner.","Share the first thing you noticed about your partner.","Send your best dramatic 'I miss you' message."];
 const shapeGlyphs = ["○","△","×","□","☆"];
 const whotNumbers = [1,2,3,4,5,7,8,10,11,12,13,14];
 const whotSuitNumbers = [[1,2,3,4,5,7,8,10,11,12,13,14],[1,2,3,4,5,7,8,10,11,12,13,14],[1,2,3,5,7,10,11,13,14],[1,2,3,5,7,10,11,13,14],[1,2,3,4,5,7,8]];
@@ -180,7 +181,7 @@ function initPoolCanvas(initial){
 }
 
 function newWhot(){
- return {deck:[],discard:[],hands:{"0":[],"1":[]},top:null,calledShape:null,turn:0,winner:"",pendingShapeIndex:null,pendingShapePlayer:null,pendingPenalty:null,pendingGeneralMarket:null,dealt:false,readyPlayers:[],message:"Both players tap the deck to deal your cards."};
+ return {deck:[],discard:[],hands:{"0":[],"1":[]},top:null,calledShape:null,turn:0,winner:"",pendingShapeIndex:null,pendingShapePlayer:null,pendingPenalty:null,pendingGeneralMarket:null,challenge:null,dealt:false,readyPlayers:[],message:"Both players tap the deck to deal your cards."};
 }
 function dealWhot(g){
  const d=makeWhotDeck(),hands={"0":d.slice(0,6),"1":d.slice(6,12)};
@@ -273,7 +274,7 @@ function playWhotCard(g,p,i,chosenShape){
  if(c.s===5&&(!Number.isInteger(chosenShape)||chosenShape<0||chosenShape>4))return false;
  const oldPenalty=g.pendingPenalty?{...g.pendingPenalty}:null;
  hand.splice(i,1);g.discard.push(g.top);g.top=c;g.lastMove={id:String(Date.now())+"-"+Math.random().toString(36).slice(2),card:{...c},player:p,index:i};g.calledShape=c.s===5?chosenShape:null;g.pendingShapeIndex=null;g.pendingShapePlayer=null;g.pendingPenalty=null;
- if(!hand.length){g.winner=room.players[p].name;g.message=g.winner+" wins Naija WHOT! 🎉";return true;}
+ if(!hand.length){g.winner=room.players[p].name;g.winnerIndex=p;g.challenge={winnerIndex:p,loserIndex:1-p,options:shuffle(whotWinnerChallenges.slice()).slice(0,3),selected:null,completed:false};g.message=g.winner+" wins Naija WHOT! 🎉 Choose a challenge for your partner!";return true;}
  const opponent=1-p;
  if(oldPenalty){
   if(c.n===oldPenalty.type){
@@ -455,7 +456,16 @@ function renderWhot(g){
    if(g.pendingShapePlayer===p&&g.pendingShapeIndex!==null)h+='<div class="shape-picker"><div class="shape-options">'+shapeNames.map((n,i)=>'<button class="shape-choice" data-shape="'+i+'" aria-label="'+n+'"><span>'+shapeGlyphs[i]+'</span></button>').join("")+'</div></div>';
    else if(g.pendingShapePlayer!==null)h+='';
    h+='<div class="cards whot-hand">'+hand.map((c,i)=>'<button class="playingcard '+(c.s===5?"whot-card":"suit-"+c.s)+'" data-card="'+i+'" aria-label="'+esc(cardLabel(c)+" "+(c.s===5?"WHOT":shapeNames[c.s]))+'" '+(g.turn!==p||g.winner||room.players.length<2||g.pendingShapePlayer!==null||g.pendingGeneralMarket===p?'disabled':'')+'>'+whotFace(c,c.s===5?"WHOT":shapeNames[c.s])+'</button>').join("")+'</div>';
-  h+='<div class="whot-status-message">'+esc(g.message||"")+'</div><div class="whot-reaction-bar" aria-label="Send a reaction">'+whotReactions.map(r=>'<button type="button" class="whot-reaction-button" data-whot-reaction="'+r.emoji+'" aria-label="Send reaction '+r.label+'" title="'+r.label+'">'+r.emoji+'</button>').join("")+'</div>';
+  h+='<div class="whot-status-message">'+esc(g.message||"")+'</div>';
+  if(g.winner&&g.challenge){
+   const ch=g.challenge,won=ch.winnerIndex===p,loser=ch.loserIndex===p;
+   h+='<section class="whot-challenge-panel"><div class="whot-challenge-kicker">🏆 WHOT WINNER CHALLENGE</div><h3>'+(ch.completed?'Challenge completed! 💗':ch.selected?'Your challenge is on! 💞':'Winner chooses, loser does it!')+'</h3><p>'+esc(room.players[ch.winnerIndex]?.name||'Winner')+' won the round'+(ch.completed?'':ch.selected?' and picked a challenge for '+esc(room.players[ch.loserIndex]?.name||'the loser')+'.':'.')+'</p>';
+   if(!ch.selected&&won&&!ch.completed){h+='<div class="whot-challenge-options">'+ch.options.map((opt,i)=>'<button class="whot-challenge-option" data-whot-challenge="'+i+'">'+esc(opt)+'</button>').join('')+'</div><small>Pick one challenge for your partner.</small>';}
+   else if(!ch.selected&&!won){h+='<div class="whot-challenge-wait">Waiting for '+esc(room.players[ch.winnerIndex]?.name||'the winner')+' to choose your challenge…</div>';}
+   else if(ch.selected){h+='<div class="whot-challenge-picked"><span>YOUR CHALLENGE</span><b>'+esc(ch.selected)+'</b></div>';if(loser&&!ch.completed)h+='<button class="whot-challenge-done" id="whotChallengeDone">💗 I did it!</button>';if(won&&!ch.completed)h+='<div class="whot-challenge-wait">Waiting for your partner to complete the challenge.</div>';if(ch.completed)h+='<div class="whot-challenge-done-note">Both of you can start another round whenever you’re ready.</div>';}
+   h+='</section>';
+  }
+  h+='<div class="whot-reaction-bar" aria-label="Send a reaction">'+whotReactions.map(r=>'<button type="button" class="whot-reaction-button" data-whot-reaction="'+r.emoji+'" aria-label="Send reaction '+r.label+'" title="'+r.label+'">'+r.emoji+'</button>').join('')+'</div>';
  }
  h+='</div>';return h;
 }
@@ -635,6 +645,8 @@ function wireGame(){
   document.querySelectorAll("[data-card]").forEach(b=>b.onclick=()=>change(s=>{const g=s.whot,p=me(),i=+b.dataset.card,c=(g.hands[p]||[])[i];if(g.turn!==p||g.winner||g.pendingShapePlayer!==null||g.pendingGeneralMarket===p||room.players.length<2||!c||!whotCanPlay(c,g))return;if(c.s===5){g.pendingShapeIndex=i;g.pendingShapePlayer=p;g.message="Choose the shape to call.";return;}playWhotCard(g,p,i);},true));
  document.querySelectorAll("[data-shape]").forEach(b=>b.onclick=()=>change(s=>{const g=s.whot,p=me(),shape=+b.dataset.shape;if(g.pendingShapePlayer!==p||g.pendingShapeIndex===null)return;playWhotCard(g,p,g.pendingShapeIndex,shape);}));
  const drawFromMarket=()=>change(s=>{const g=s.whot,p=me();if(g.turn!==p||g.winner||g.pendingShapePlayer!==null||room.players.length<2)return;if(g.pendingGeneralMarket!==null&&g.pendingGeneralMarket!==p){g.message=(g.pendingGeneralMarket===1?"Computer":"Your opponent")+" must pick the General Market card first.";return;}if(g.pendingGeneralMarket===p){const c=drawWhotCard(g);if(!c){g.message="No cards remain in the Market.";return;}g.hands[p].push(c);recordWhotDraw(g,c,p);g.pendingGeneralMarket=null;g.turn=1-p;g.message=room.players[p].name+" picked one card from General Market. Turn passes back to "+room.players[g.turn].name+".";}else if(g.pendingPenalty){if(g.pendingPenalty.player!==undefined&&g.pendingPenalty.player!==p){g.message="The Pick "+(g.pendingPenalty.type===2?"Two":"Three")+" is for "+room.players[g.pendingPenalty.player].name+". It is not your turn to pick.";return;}const amount=g.pendingPenalty.amount;for(let n=0;n<amount;n++){const c=drawWhotCard(g);if(c){g.hands[p].push(c);recordWhotDraw(g,c,p);}}g.pendingPenalty=null;g.turn=1-p;g.message=room.players[p].name+" picked "+amount+" card(s) for the penalty. Turn passes back to "+room.players[g.turn].name+".";}else{const c=drawWhotCard(g);if(!c){g.message="No cards remain to draw. Restart the game.";return;}g.hands[p].push(c);recordWhotDraw(g,c,p);g.turn=1-p;g.message=room.players[p].name+" picked a card from the Market. Turn passes.";}},true);const dr=$("drawCard");if(dr)dr.onclick=drawFromMarket;const pile=$("drawPile");if(pile)pile.onclick=drawFromMarket;
+ document.querySelectorAll("[data-whot-challenge]").forEach(b=>b.onclick=()=>{const index=Number(b.dataset.whotChallenge);change(s=>{const g=s.whot,ch=g?.challenge;if(!g?.winner||!ch||ch.winnerIndex!==me()||ch.selected||!Number.isInteger(index)||!ch.options[index])return;ch.selected=ch.options[index];ch.selectedAt=Date.now();g.message=room.players[ch.winnerIndex].name+" chose a challenge for "+room.players[ch.loserIndex].name+"!";});});
+ const whotChallengeDone=$("whotChallengeDone");if(whotChallengeDone)whotChallengeDone.onclick=()=>change(s=>{const ch=s.whot?.challenge;if(!ch||ch.loserIndex!==me()||!ch.selected||ch.completed)return;ch.completed=true;ch.completedAt=Date.now();s.whot.message=room.players[ch.loserIndex].name+" completed the winner's challenge! 💗";});
  document.querySelectorAll("[data-whot-reaction]").forEach(b=>b.onclick=()=>{const emoji=b.dataset.whotReaction;change(s=>{if(!s.whot||s.whot.winner)return;s.whot.lastReaction={id:String(Date.now())+"-"+Math.random().toString(36).slice(2),emoji,player:me(),playerName:room.players[me()]?.name||"Player",at:Date.now()};});});
  const rw=$("resetWhot");if(rw)rw.onclick=()=>change(s=>{s.whot=newWhot();});
  const snakeRoll=$("snakesRoll");if(snakeRoll)snakeRoll.onclick=()=>change(s=>{if(!s.snakes)s.snakes=newSnakes();const g=s.snakes;if(g.turn!==me()||g.winner||room.players.length<2)return;const roll=1+Math.floor(Math.random()*6);g.dice=roll;let next=g.positions[me()];if(next+roll>100){g.message="Need an exact roll to reach 100.";g.turn=1-me();return;}next+=roll;if(SNAKE_LADDERS[next]){const target=SNAKE_LADDERS[next];g.message=target>next?"Ladder! Climb from "+next+" to "+target+"!":"Snake! Slide from "+next+" to "+target+"!";next=target;}else g.message=room.players[me()].name+" moved to square "+next+".";g.positions[me()]=next;if(next===100){g.winner=room.players[me()].name;g.message=g.winner+" wins Snake and Ladder!";return;}if(roll===6)g.message+=" Six! Roll again.";else g.turn=1-me();});
