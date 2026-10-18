@@ -213,17 +213,30 @@ function initPoolCanvas(initial){
    ctx.save();ctx.setLineDash([10,7]);ctx.lineWidth=3;ctx.strokeStyle="#ffffffdd";ctx.beginPath();ctx.moveTo(cx+ux*(cue.r*tw+3),cy+uy*(cue.r*tw+3));ctx.lineTo(cx+ux*rayLen,cy+uy*rayLen);ctx.stroke();ctx.restore();
    if(hitBall){
     const hx=m+hitBall.x*tw,hy=m+hitBall.y*th,hr=hitBall.r*tw;
-    // Highlight the ball being targeted and show its predicted travel direction.
+    // Show the exact first-contact point and the cue ball's likely path.
     ctx.beginPath();ctx.arc(hx,hy,hr+5,0,Math.PI*2);ctx.strokeStyle="#fff7a8";ctx.lineWidth=3;ctx.stroke();
-    // The object ball travels along the centre-to-centre collision normal, not
-    // necessarily the cue ball's incoming direction (important for cut shots).
+    ctx.save();ctx.setLineDash([5,7]);ctx.strokeStyle="#ffffffaa";ctx.lineWidth=2;
+    ctx.beginPath();ctx.moveTo(cx+ux*(cue.r*tw+3),cy+uy*(cue.r*tw+3));ctx.lineTo(hitImpactX,hitImpactY);ctx.stroke();ctx.restore();
+    // Object-ball direction follows the centre-to-centre collision normal,
+    // giving a useful cut-shot guide rather than simply extending the cue line.
     const ox=hx-hitImpactX,oy=hy-hitImpactY,olen=Math.hypot(ox,oy)||1,txu=ox/olen,tyu=oy/olen;
-    const objectLine=Math.min(82,Math.max(42,tw*.075));
-    ctx.save();ctx.strokeStyle="#ffe27a";ctx.lineWidth=5;ctx.lineCap="round";
-    ctx.beginPath();ctx.moveTo(hx+txu*(hr+3),hy+tyu*(hr+3));ctx.lineTo(hx+txu*(hr+objectLine),hy+tyu*(hr+objectLine));ctx.stroke();
-    const tx=hx+txu*(hr+objectLine),ty=hy+tyu*(hr+objectLine),targetAngle=Math.atan2(tyu,txu);
+    const startX=hx+txu*(hr+2),startY=hy+tyu*(hr+2);
+    let travel=360;
+    const ex=txu>0?(W-m-hx)/txu:txu<0?(m-hx)/txu:Infinity;
+    const ey=tyu>0?(H-m-hy)/tyu:tyu<0?(m-hy)/tyu:Infinity;
+    const edgeDist=Math.min(ex>0?ex:Infinity,ey>0?ey:Infinity);
+    if(Number.isFinite(edgeDist))travel=Math.min(travel,edgeDist);
+    // Prefer a pocket whose centre is closest to the projected object-ball line.
+    let pocketTarget=null,pocketScore=Infinity;
+    pockets.forEach(([px,py])=>{const qx=m+px*tw,qy=m+py*th,rx=qx-hx,ry=qy-hy,along=rx*txu+ry*tyu,side=Math.abs(rx*tyu-ry*txu);if(along>hr&&side<pocketScore){pocketScore=side;pocketTarget={x:qx,y:qy,along};}});
+    if(pocketTarget&&pocketScore<Math.max(34,hr*2.4))travel=Math.min(travel,pocketTarget.along);
+    ctx.save();ctx.lineCap="round";ctx.strokeStyle="#ffe27a";ctx.lineWidth=4;
+    ctx.beginPath();ctx.moveTo(startX,startY);ctx.lineTo(hx+txu*travel,hy+tyu*travel);ctx.stroke();
+    const tx=hx+txu*travel,ty=hy+tyu*travel,targetAngle=Math.atan2(tyu,txu);
     ctx.beginPath();ctx.moveTo(tx,ty);ctx.lineTo(tx-15*Math.cos(targetAngle-.55),ty-15*Math.sin(targetAngle-.55));ctx.moveTo(tx,ty);ctx.lineTo(tx-15*Math.cos(targetAngle+.55),ty-15*Math.sin(targetAngle+.55));ctx.stroke();
-    ctx.restore();
+    if(pocketTarget&&pocketScore<Math.max(34,hr*2.4)){ctx.beginPath();ctx.arc(pocketTarget.x,pocketTarget.y,16,0,Math.PI*2);ctx.strokeStyle="#ffe27a";ctx.lineWidth=3;ctx.stroke();}
+    // A translucent ghost ball shows where the cue ball must contact the target.
+    ctx.globalAlpha=.55;ctx.beginPath();ctx.arc(hitImpactX-ux*(cue.r*tw),hitImpactY-uy*(cue.r*tw),cue.r*tw,0,Math.PI*2);ctx.fillStyle="#d9f6ff";ctx.fill();ctx.strokeStyle="#ffffff";ctx.lineWidth=2;ctx.stroke();ctx.restore();
    }
    // Cue stick points opposite the aim direction; pull-back amount follows selected power.
    const pull=local.power*85;
