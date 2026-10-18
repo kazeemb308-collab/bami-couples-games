@@ -395,7 +395,7 @@ function launchWhotFlight(event,kind){
  const dx=to.cx-from.cx,dy=to.cy-from.cy,sx=Math.max(.35,to.width/width),sy=Math.max(.35,to.height/height);
  const animation=card.animate([
   {transform:"translate(0,0) scale(1,1) rotate(-7deg)",opacity:.98},
-  {transform:"translate("+dx+"px,"+dy+"px) scale("+sx+","+sy+") rotate(0deg)",opacity:kind==="play"?.22:0}
+  {transform:"translate("+dx+"px,"+dy+"px) scale("+sx+","+sy+") rotate(0deg)",opacity:kind==="play" ? 0.22 : 0}
  ],{duration:680,easing:"cubic-bezier(.2,.75,.25,1)",fill:"forwards"});
  animation.finished.then(()=>card.remove()).catch(()=>card.remove());
 }
