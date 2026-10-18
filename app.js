@@ -871,7 +871,7 @@ function scheduleComputerTurn(){
     const game=loadChessState(g),moves=game.moves({verbose:true});if(!moves.length)return;
     const captures=moves.filter(m=>m.captured),checks=moves.filter(m=>{try{game.move(m);const check=game.in_check();game.undo();return check;}catch(e){return false;}});
     const pool=moves.filter(m=>m.flags.includes("c")||m.flags.includes("e"));
-    const chosen=(captures.length&&Math.random()<.72?captures:checks.length&&Math.random()<.55?checks:moves)[Math.floor(Math.random()*(captures.length&&Math.random()<.72?captures:checks.length&&Math.random()<.55?checks:moves).length)];
+    const preferred=captures.length&&Math.random()<.72?captures:checks.length&&Math.random()<.55?checks:moves;const chosen=preferred[Math.floor(Math.random()*preferred.length)];
     if(!chosen)return;
     const move=game.move({from:chosen.from,to:chosen.to,promotion:chosen.promotion||"q"});if(!move)return;
     g.pgn=game.pgn();g.fen=game.fen();g.turn=game.turn();g.moves=(g.moves||0)+1;g.lastMove={from:move.from,to:move.to,san:move.san};g.drawOffer=null;
