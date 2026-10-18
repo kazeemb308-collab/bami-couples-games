@@ -816,7 +816,30 @@ input,textarea,[contenteditable="true"]{-webkit-user-select:text;user-select:tex
 @media(max-width:900px){#gameArea .chess-shell{width:100%;max-width:100%;margin:0 auto;padding:10px}.chess-layout{display:flex!important;flex-direction:column!important;width:100%;gap:14px}.chess-play-column,.chess-side-column{width:100%;min-width:0;max-width:100%}.chess-board-frame{width:100%;max-width:min(100%,620px);margin:12px auto}.chess-side-column{display:flex!important;flex-direction:column!important}.chess-side-card,.chess-draw-offer{width:100%}}
 @media(min-width:901px){.chess-layout{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(240px,.75fr)}}
 
-/* FORCE A FULL-SIZE CHESSBOARD ON MOBILE */
+/* CHESS LAYOUT REPAIR: board must never share a narrow column with history/rules */
+#gameArea .chess-shell{display:block!important;width:100%!important;max-width:100%!important;min-width:0!important;overflow:visible!important}
+#gameArea .chess-topbar{display:flex!important;flex-direction:column!important;align-items:flex-start!important;gap:10px!important;width:100%!important;min-width:0!important}
+#gameArea .chess-topbar h2{font-size:clamp(28px,7vw,38px)!important;line-height:1.1!important;margin:6px 0!important;overflow-wrap:normal!important}
+#gameArea .chess-layout{display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:16px!important;width:100%!important;min-width:0!important}
+#gameArea .chess-play-column,#gameArea .chess-side-column{display:flex!important;flex-direction:column!important;flex:0 0 auto!important;width:100%!important;max-width:100%!important;min-width:0!important}
+#gameArea .chess-board-frame{position:relative!important;display:block!important;width:100%!important;max-width:620px!important;min-width:0!important;margin:14px auto!important;padding:22px 12px 7px!important;overflow:hidden!important}
+#gameArea .chess-board{display:grid!important;grid-template-columns:repeat(8,minmax(0,1fr))!important;grid-template-rows:repeat(8,minmax(0,1fr))!important;gap:0!important;width:100%!important;height:auto!important;aspect-ratio:1/1!important;max-width:none!important;min-width:0!important;flex:none!important}
+#gameArea .chess-square{display:flex!important;width:100%!important;height:auto!important;min-width:0!important;min-height:0!important;aspect-ratio:1/1!important;padding:0!important;margin:0!important}
+#gameArea .chess-files.top{top:3px!important;left:12px!important;right:12px!important}
+#gameArea .chess-files.bottom{display:grid!important;grid-template-columns:repeat(8,minmax(0,1fr))!important;width:100%!important}
+#gameArea .chess-side-card,#gameArea .chess-draw-offer{display:block!important;width:100%!important;max-width:100%!important;min-width:0!important}
+#gameArea .chess-rules-list{font-size:12px!important;line-height:1.5!important;overflow-wrap:anywhere!important}
+@media(max-width:600px){
+ #gameArea .chess-shell{padding:10px!important}
+ #gameArea .chess-topbar{padding:4px 0 14px!important;margin-bottom:12px!important}
+ #gameArea .chess-live{align-self:flex-start!important}
+ #gameArea .chess-player-strip,#gameArea .chess-status-card{width:100%!important;min-width:0!important}
+ #gameArea .chess-board-frame{padding:21px 10px 6px!important}
+ #gameArea .chess-files.top{left:10px!important;right:10px!important}
+ #gameArea .chess-square{font-size:clamp(24px,9vw,46px)!important}
+ #gameArea .chess-side-column{gap:12px!important}
+}
+
 #gameArea .chess-shell{box-sizing:border-box;width:100%!important;max-width:100%!important;min-width:0!important}
 #gameArea .chess-layout{display:flex!important;flex-direction:column!important;align-items:stretch!important;width:100%!important;min-width:0!important}
 #gameArea .chess-play-column{display:block!important;flex:0 0 auto!important;width:100%!important;max-width:100%!important;min-width:0!important}
