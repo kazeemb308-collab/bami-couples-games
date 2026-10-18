@@ -372,8 +372,9 @@ function whotAnimationRect(selector,preferredIndex){
  }
  return whotRectCenter(el);
 }
+let whotFlightBusy=false;
 function launchWhotFlight(event,kind){
- if(!event?.card||!$("gameArea"))return;
+ if(whotFlightBusy||!event?.card||!$("gameArea"))return;
  const localPlayer=me(),isLocal=event.player===localPlayer;
  let from,to,face;
  if(kind==="play"){
@@ -382,30 +383,30 @@ function launchWhotFlight(event,kind){
   face=whotFace(event.card,event.card.s===5?"WHOT":shapeNames[event.card.s]);
  }else{
   from=whotAnimationRect("#drawPile");
-  to=isLocal?whotAnimationRect(".whot-hand",0):whotAnimationRect(".opponent-hand",0);
+  to=isLocal?whotAnimationRect(".whot-hand",Math.max(0,(room?.state?.whot?.hands?.[localPlayer]||[]).length-1)):whotAnimationRect(".opponent-hand");
   face=isLocal?whotFace(event.card,event.card.s===5?"WHOT":shapeNames[event.card.s]):'<span class="card-back-flight-mark">W</span>';
  }
  if(!from||!to)return;
+ whotFlightBusy=true;
  const card=document.createElement("div");
  card.className="playingcard whot-flight-overlay "+(kind==="draw"&&!isLocal?"card-back-flight":event.card.s===5?"whot-card":"suit-"+event.card.s);
  card.setAttribute("aria-hidden","true");card.innerHTML=face;
- const width=from.width,height=from.height;
- Object.assign(card.style,{left:from.left+"px",top:from.top+"px",width:width+"px",height:height+"px"});
+ Object.assign(card.style,{left:from.left+"px",top:from.top+"px",width:from.width+"px",height:from.height+"px"});
  document.body.appendChild(card);
- const dx=to.cx-from.cx,dy=to.cy-from.cy,sx=Math.max(.35,to.width/width),sy=Math.max(.35,to.height/height);
- const animation=card.animate([
-  {transform:"translate(0,0) scale(1,1) rotate(-7deg)",opacity:.98},
-  {transform:"translate("+dx+"px,"+dy+"px) scale("+sx+","+sy+") rotate(0deg)",opacity:kind==="play" ? 0.22 : 0}
- ],{duration:680,easing:"cubic-bezier(.2,.75,.25,1)",fill:"forwards"});
- animation.finished.then(()=>card.remove()).catch(()=>card.remove());
+ const dx=to.cx-from.cx,dy=to.cy-from.cy,sx=Math.max(.35,to.width/from.width),sy=Math.max(.35,to.height/from.height);
+ card.style.setProperty("--whot-fly-x",dx+"px");card.style.setProperty("--whot-fly-y",dy+"px");
+ card.style.setProperty("--whot-fly-sx",String(sx));card.style.setProperty("--whot-fly-sy",String(sy));
+ card.classList.add("whot-flight-running");
+ const cleanup=()=>{card.remove();whotFlightBusy=false;};
+ card.addEventListener("animationend",cleanup,{once:true});
+ setTimeout(cleanup,520);
 }
 function playPendingWhotAnimations(){
  const move=pendingWhotMoveAnimation,draw=pendingWhotDrawAnimation;
  pendingWhotMoveAnimation=null;pendingWhotDrawAnimation=null;
  if(move)requestAnimationFrame(()=>launchWhotFlight(move,"play"));
- if(draw)requestAnimationFrame(()=>launchWhotFlight(draw,"draw"));
+ else if(draw)requestAnimationFrame(()=>launchWhotFlight(draw,"draw"));
 }
-
 function renderWhot(g){
  if(g.lastMove?.id&&g.lastMove.id!==lastWhotMoveSeen){lastWhotMoveSeen=g.lastMove.id;pendingWhotMoveAnimation={...g.lastMove};}
  if(g.lastDraw?.id&&g.lastDraw.id!==lastWhotDrawSeen){lastWhotDrawSeen=g.lastDraw.id;pendingWhotDrawAnimation={...g.lastDraw};}
