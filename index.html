@@ -717,6 +717,17 @@ body:has(#gameArea:not(.hidden) .ttt-screen){overflow:hidden}
 #gameArea:has(.pool-game) .pool-controls .power-only{grid-column:1/-1;width:100%}
 #gameArea:has(.pool-game) .pool-controls .power-range{height:54px;accent-color:#ffe27a;cursor:grab}
 #gameArea:has(.pool-game) .pool-controls .power-range:active{cursor:grabbing}
+
+/* Live Naija WHOT card-play animation: both players see the played card travel to the discard pile. */
+.naija-whot-table{position:relative}
+.naija-whot-table .whot-fly-card{position:absolute;z-index:50;left:50%;top:48%;width:82px;min-width:82px;height:112px;min-height:112px;pointer-events:none;animation-duration:.68s;animation-timing-function:cubic-bezier(.2,.75,.25,1);animation-fill-mode:both;box-shadow:0 8px 18px #001b}
+.naija-whot-table .whot-fly-card.from-top{animation-name:whotCardFromTop}
+.naija-whot-table .whot-fly-card.from-bottom{animation-name:whotCardFromBottom}
+.naija-whot-table .whot-fly-card .card-caption{bottom:27px!important}
+@keyframes whotCardFromTop{0%{transform:translate(-50%,-165px) rotate(13deg) scale(.72);opacity:.15}18%{opacity:1}78%{opacity:1}100%{transform:translate(-50%,-50%) rotate(0) scale(1);opacity:0}}
+@keyframes whotCardFromBottom{0%{transform:translate(-50%,120px) rotate(-13deg) scale(.72);opacity:.15}18%{opacity:1}78%{opacity:1}100%{transform:translate(-50%,-50%) rotate(0) scale(1);opacity:0}}
+@media(prefers-reduced-motion:reduce){.naija-whot-table .whot-fly-card{animation-duration:.01ms}}
+
 </style>
 </head><body>
 <header><div class="brand">Bami <span>&</span> Oluwatosin <span>♥</span></div><div class="status" id="connectionStatus">Connecting…<br>Private couple room</div></header>
@@ -745,4 +756,4 @@ window.addEventListener("unhandledrejection", function (event) {
   message.textContent = "Startup failed: " + reason;
 });
 </script>
-<script type="module" src="./app.js?v=20261017poolfix1"></script></body></html>
+<script type="module" src="./app.js?v=20261018whotfly1"></script></body></html>
