@@ -727,6 +727,18 @@ body:has(#gameArea:not(.hidden) .ttt-screen){overflow:hidden}
 .card-back-flight-mark{display:grid;place-items:center;width:45%;height:40%;border:2px solid #ffe9a9;border-radius:50%;font:900 22px Georgia,serif}
 @media(prefers-reduced-motion:reduce){.whot-flight-overlay.whot-flight-running{animation-duration:.01ms!important}}
 
+
+/* Lightweight, synchronized WHOT reactions and special-card feedback */
+.whot-reaction-bar{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin:12px auto 3px;padding:7px 9px;width:fit-content;max-width:100%;border:1px solid #ffffff30;border-radius:999px;background:#003d2b99}
+.whot-reaction-button{display:grid;place-items:center;width:39px;height:39px;min-width:39px;padding:0;border-radius:50%;background:#fff7e6;color:#222;font-size:22px;box-shadow:0 2px 0 #0018;transition:transform .12s ease,background .12s ease}
+.whot-reaction-button:active{transform:scale(.88)}
+.whot-reaction-button:focus-visible{outline:3px solid #ffe28a;outline-offset:2px}
+.whot-reaction-float{position:fixed;z-index:2500;bottom:23%;font-size:clamp(24px,6vw,38px);font-weight:900;color:#fff;text-shadow:0 3px 10px #000b;pointer-events:none;white-space:nowrap;animation:whotReactionPop 1.45s cubic-bezier(.2,.7,.2,1) forwards}
+@keyframes whotReactionPop{0%{opacity:0;transform:translate(-50%,18px) scale(.65)}18%{opacity:1;transform:translate(-50%,0) scale(1.12)}32%{transform:translate(-50%,-3px) scale(1)}82%{opacity:1;transform:translate(-50%,-38px) scale(1)}100%{opacity:0;transform:translate(-50%,-58px) scale(.92)}}
+.naija-whot-table .playingcard.special-card-glow{animation:whotSpecialGlow .65s ease-out}
+@keyframes whotSpecialGlow{0%{filter:brightness(1);box-shadow:0 5px 0 #9e7847,0 8px 14px #0018}35%{filter:brightness(1.2);box-shadow:0 0 0 4px #ffe28a99,0 0 22px #ffe28a88}100%{filter:brightness(1);}}
+@media(prefers-reduced-motion:reduce){.whot-reaction-float,.naija-whot-table .playingcard.special-card-glow{animation-duration:.01ms!important}.whot-reaction-button{transition:none}}
+
 </style>
 </head><body>
 <header><div class="brand">Bami <span>&</span> Oluwatosin <span>♥</span></div><div class="status" id="connectionStatus">Connecting…<br>Private couple room</div></header>
