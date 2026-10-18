@@ -399,7 +399,7 @@ function launchWhotFlight(event,kind){
  card.classList.add("whot-flight-running");
  const cleanup=()=>{card.remove();whotFlightBusy=false;};
  card.addEventListener("animationend",cleanup,{once:true});
- setTimeout(cleanup,520);
+ setTimeout(cleanup,400);
 }
 function playPendingWhotAnimations(){
  const move=pendingWhotMoveAnimation,draw=pendingWhotDrawAnimation;
