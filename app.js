@@ -245,6 +245,7 @@ function drawWhotCard(g){
  if(!g.deck.length&&g.discard.length){g.deck=shuffle(g.discard);g.discard=[];}
  return g.deck.length?g.deck.pop():null;
 }
+function recordWhotDraw(g,card,player){if(card)g.lastDraw={id:String(Date.now())+"-"+Math.random().toString(36).slice(2),card:{...card},player};}
 function whotCanPlay(c,g){
  if(!c||!g||!g.top)return !!c;
  if(g.pendingPenalty)return c.s!==5&&c.n===g.pendingPenalty.type;
