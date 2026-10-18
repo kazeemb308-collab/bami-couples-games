@@ -190,7 +190,7 @@ function dealWhot(g){
 }
 function newSnakes(){return {positions:[0,0],turn:0,dice:null,winner:"",message:"Tap the dice to start your race to 100."};}
 function newLudo(){return {tokens:{"0":[-1,-1,-1,-1],"1":[-1,-1,-1,-1],"2":[-1,-1,-1,-1],"3":[-1,-1,-1,-1]},turn:0,dice:null,roll:null,rolls:null,usedDice:[false,false],selectedDie:null,lastRoll:null,sixStreak:0,hasCaptured:{"0":false,"1":false},winner:"",message:"Tap the dice in the centre to roll. Choose one number, then tap a seed to move it."};}
-function initialState(){return {scores:[0,0],gameScores:{whot:[0,0],ludo:[0,0],ttt:[0,0],snakes:[0,0],ayo:[0,0]},snakes:newSnakes(),ayo:newAyo(),pool:newPool(),ttt:{cells:Array(9).fill(""),turn:"X",winner:"",moves:0},whot:newWhot(),ludo:newLudo(),quiz:{index:0,answers:{},scores:[0,0]},truth:{turn:0,prompt:"Choose Truth or Dare to begin."}};}
+function initialState(){return {scores:[0,0],gameScores:{whot:[0,0],ludo:[0,0],ttt:[0,0],snakes:[0,0],ayo:[0,0]},snakes:newSnakes(),ayo:newAyo(),pool:newPool(),ttt:{cells:Array(9).fill(""),turn:"X",winner:"",moves:0},whot:newWhot(),ludo:newLudo(),quiz:{index:0,answers:{},scores:[0,0]},truth:{turn:0,prompt:"Choose Truth or Dare to begin."},couplesChallenge:{category:"sweet",promptIndex:-1,turn:0,completed:0,lastIndex:-1,started:false}};}
 function me(){return room?room.players.findIndex(p=>p.id===playerId):-1;}
 function myName(p){return esc((room.players[p]||{}).name||("Player "+(p+1)));}
 async function init(){
@@ -532,9 +532,56 @@ function resetFinishedGame(s,key){
  else if(key==="pool")s.pool=newPool();
  s.rematchVotes=[];
 }
+const couplesChallengePrompts={
+ sweet:[
+ "Look at your partner and name three little things you adore about them.",
+ "Give your partner a 20-second appreciation speech.",
+ "Describe your favourite memory together in a way that makes it sound like a movie.",
+ "Send your partner a voice note saying one thing you cannot wait to do together.",
+ "Give your partner a genuine compliment you have never said out loud.",
+ "Choose a song that reminds you of your relationship and explain why.",
+ "Tell your partner one small thing they do that makes you feel loved.",
+ "Plan a tiny surprise for your partner that costs nothing."
+ ],
+ fun:[
+ "Both do your best impression of how the other person texts.",
+ "Invent a ridiculous couple nickname for the two of you.",
+ "Describe your first impression of each other in only five words.",
+ "Take turns making each other laugh without touching your phone.",
+ "Create a two-line theme song for your relationship.",
+ "Let your partner choose a harmless funny pose for your next selfie.",
+ "Tell the story of how you met as if you are a sports commentator.",
+ "Each of you must name one food the other could never give up."
+ ],
+ deep:[
+ "What helps you feel safe and understood when you are upset?",
+ "What is one dream you would love for us to work toward together?",
+ "When do you feel closest to me, even if we are apart?",
+ "What is one thing we could do to communicate better?",
+ "What does a healthy apology look like to you?",
+ "What is one fear about the future you would like your partner to understand?",
+ "Name one boundary that helps you feel respected in a relationship.",
+ "What is one way we can support each other's personal growth?"
+ ]
+};
+const couplesChallengeCategories={sweet:{label:"Sweet & Romantic",emoji:"💗",description:"Little moments of love and appreciation"},fun:{label:"Silly & Fun",emoji:"😂",description:"Laugh together and be a little ridiculous"},deep:{label:"Deep Connection",emoji:"🌙",description:"Thoughtful questions for a closer bond"}};
+function renderCouplesChallenge(s){
+ const g=s.couplesChallenge||(s.couplesChallenge={category:"sweet",promptIndex:-1,turn:0,completed:0,lastIndex:-1,started:false});
+ const category=couplesChallengeCategories[g.category]||couplesChallengeCategories.sweet;
+ const prompts=couplesChallengePrompts[g.category]||couplesChallengePrompts.sweet;
+ const waiting=room.players.length<2;
+ let out='<div class="couples-challenge"><div class="cc-hero"><div class="cc-heart">💞</div><div class="eyebrow">JUST YOU TWO</div><h2>Couples Challenge</h2><p>Little challenges to laugh, connect and learn more about each other.</p></div>';
+ out+='<div class="cc-categories">'+Object.keys(couplesChallengeCategories).map(key=>{const c=couplesChallengeCategories[key];return '<button class="cc-category '+(g.category===key?'selected':'')+'" data-cc-category="'+key+'" '+(waiting?'disabled':'')+'><span>'+c.emoji+'</span><b>'+c.label+'</b><small>'+c.description+'</small></button>';}).join("")+'</div>';
+ out+='<div class="cc-progress"><span>💞 Challenges completed together</span><b>'+Number(g.completed||0)+'</b></div>';
+ if(!g.started||g.promptIndex<0)out+='<div class="cc-prompt cc-empty"><span>'+category.emoji+'</span><h3>Ready for a little us-time?</h3><p>Choose a vibe above, then start your first challenge.</p><button id="ccStart" class="pink" '+(waiting?'disabled':'')+'>Start our challenge ✨</button></div>';
+ else out+='<div class="cc-prompt"><div class="cc-prompt-kicker">'+category.emoji+' '+category.label.toUpperCase()+'</div><div class="cc-turn"> '+(g.turn===me()?'YOUR TURN':esc((room.players[g.turn]||{}).name||"Partner")+"’S TURN")+'</div><h3>'+esc(prompts[g.promptIndex]||prompts[0])+'</h3><p class="cc-nudge">'+(g.turn===me()?"Take your time — there’s no wrong answer.":"Let your partner have the spotlight. 💗")+'</p><button id="ccComplete" class="pink" '+(waiting||g.turn!==me()?'disabled':'')+'>Done — pass the turn 💞</button></div>';
+ out+='<p class="cc-footnote">'+(waiting?'Waiting for your partner to join before starting.':'No points, no pressure — skip anything that doesn’t feel right.')+'</p></div>';
+ return out;
+}
 function renderGame(){
  if(!room)return;const s=room.state,waiting=room.players.length<2?"Waiting for your partner to join…":"Playing with "+(room.players[1-me()]||{}).name;
  let h=(activeGame==="whot"||activeGame==="ludo"||activeGame==="snakes"||activeGame==="ayo"||activeGame==="pool")?'<div class="whot-screen-header"><button id="backToGames" class="whot-back">← Games</button><div class="whot-brandline"><span>'+(activeGame==="whot"?"🃏":activeGame==="ludo"?"🎲":activeGame==="snakes"?"🐍":activeGame==="ayo"?"🫘":"🎱")+'</span><span><b>'+(activeGame==="whot"?"NAIJA WHOT":activeGame==="ludo"?"NAIJA LUDO":activeGame==="snakes"?"SNAKE & LADDER":activeGame==="ayo"?"AYO OWARE":"8-BALL POOL")+'</b><small>BAMI ♥ OLUWATOSIN</small></span></div><div class="whot-online">'+(room.players.length<2?'WAITING…':'● 2 PLAYERS')+'</div></div>':'<div class="actions"><button id="backToGames" class="secondary">← All games</button></div><div class="eyebrow">NOW PLAYING</div><h2>'+({whot:"🃏 WHOT!",ludo:"🎲 Ludo",ttt:"⭕ Tic-Tac-Toe",quiz:"💗 Couples Quiz",truth:"🔥 Truth or Dare"}[activeGame])+'</h2><p class="muted">'+esc(waiting)+'</p>';
+ if(activeGame==="couples"){h+=renderCouplesChallenge(s);$("gameArea").innerHTML=h;wireCouplesChallenge();wireGame();return;}
  const scores=Array.isArray(s.scores)?s.scores:[0,0];if(activeGame!=="whot"&&activeGame!=="ludo")h+='<div class="overall-scoreboard"><span>🏆 MATCH SCORE</span><b>'+myName(0)+' '+(scores[0]||0)+'</b><i>—</i><b>'+myName(1)+' '+(scores[1]||0)+'</b></div>';
  if(activeGame==="ttt"){
   const g=s.ttt,turnIndex=g.turn==="X"?0:1,turnName=myName(turnIndex),done=!!g.winner||g.moves>=9;
@@ -564,6 +611,11 @@ function renderGame(){
   h+='<div class="rematch-overlay" role="dialog" aria-modal="true" aria-label="Game over"><div class="rematch-panel"><div class="rematch-result">'+result+'</div><p>'+(finished.draw?'Nobody won this round. Play again?':esc(finished.winner)+' won the match!')+'</p><button id="rematchButton" class="pink" '+(alreadyVoted?'disabled':'')+'>'+(alreadyVoted?'✓ Rematch requested':'↻ Rematch')+'</button><div class="rematch-waiting">'+votes.length+' of 2 players ready'+(alreadyVoted?' · Waiting for your partner…':' · Both players must press Rematch')+'</div></div></div>';
  }
  $("gameArea").innerHTML=h;if(activeGame==="whot")playPendingWhotAnimations();wireGame();scheduleComputerTurn();
+}
+function wireCouplesChallenge(){
+ document.querySelectorAll("[data-cc-category]").forEach(button=>button.onclick=()=>change(s=>{const g=s.couplesChallenge||(s.couplesChallenge={category:"sweet",promptIndex:-1,turn:0,completed:0,lastIndex:-1,started:false});if(room.players.length<2)return;g.category=button.dataset.ccCategory;g.started=false;g.promptIndex=-1;}));
+ const start=$("ccStart");if(start)start.onclick=()=>change(s=>{if(room.players.length<2)return;const g=s.couplesChallenge||(s.couplesChallenge={category:"sweet",promptIndex:-1,turn:0,completed:0,lastIndex:-1,started:false});const list=couplesChallengePrompts[g.category]||couplesChallengePrompts.sweet;let next=Math.floor(Math.random()*list.length);if(list.length>1&&next===g.lastIndex)next=(next+1)%list.length;g.promptIndex=next;g.lastIndex=next;g.turn=0;g.started=true;});
+ const done=$("ccComplete");if(done)done.onclick=()=>change(s=>{const g=s.couplesChallenge;if(!g||!g.started||g.turn!==me()||room.players.length<2)return;g.completed=(g.completed||0)+1;const list=couplesChallengePrompts[g.category]||couplesChallengePrompts.sweet;let next=Math.floor(Math.random()*list.length);if(list.length>1&&next===g.lastIndex)next=(next+1)%list.length;g.promptIndex=next;g.lastIndex=next;g.turn=1-me();});
 }
 function wireGame(){
  const rematch=$( "rematchButton" );
