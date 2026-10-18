@@ -574,7 +574,7 @@ function scheduleComputerTurn(){
     if(!moved){const extra=g.rolls[0]===6&&g.rolls[1]===6;g.roll=null;g.rolls=null;g.usedDice=[false,false];g.dice=null;if(!extra)g.turn=0;else g.message="Computer rolled double six and rolls again.";}
    }else if(activeGame==="quiz"){st.quiz.answers[1]=Math.floor(Math.random()*4);}
    else if(activeGame==="truth"){st.truth.prompt=pick(truths.concat(dares));st.truth.turn=0;}
-  });}finally{botThinking=false;scheduleComputerTurn();}
+  });}finally{botThinking=false;scheduleComputerTurn();setTimeout(scheduleComputerTurn,350);}
  },650);
 }
 
