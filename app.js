@@ -356,12 +356,38 @@ async function change(fn,optimistic=false){
    optimisticState=structuredClone(startingRoom.state);
    fn(optimisticState,startingRoom);
    optimisticState.scores=Array.isArray(optimisticState.scores)?optimisticState.scores:[0,0];
-   optimisticState.gameScores=optimisticState.gameScores&&typeof optimisticState.gameScores==="object"?optimisticState.gameScores:{whot:[0,0],ludo:[0,0],ttt:[0,0],chess:[0,0]};
+   optimisticState.gameScores=optimisticState.gameScores&&typeof optimisticState.gameScores==="object"?optimisticState.gameScores:{};
    room={...startingRoom,state:optimisticState};
    renderGame();
   }catch(e){optimisticState=null;room=startingRoom;}
  }
- try{await runTransaction(db,async tx=>{const ref=doc(db,"coupleRooms",startingRoomId),snap=await tx.get(ref);if(!snap.exists())throw Error("Room not found.");const data=snap.data(),oldState=structuredClone(data.state),state=structuredClone(data.state);fn(state,data);if(optimisticState&&optimisticState.whot&&state.whot){for(const key of ["lastMove","lastDraw"]){const a=optimisticState.whot[key],b=state.whot[key];if(a&&b&&a.card&&b.card&&a.player===b.player&&a.card.s===b.card.s&&a.card.n===b.card.n&&(key!=="lastMove"||a.index===b.index)){b.id=a.id;}}}state.scores=Array.isArray(state.scores)?state.scores:[0,0];state.gameScores=state.gameScores&&typeof state.gameScores==="object"?state.gameScores:{whot:[0,0],ludo:[0,0],ttt:[0,0]};for(const key of ["whot","ludo","ttt","ayo","pool","chess"]){const oldWinner=oldState[key]?.winner,newWinner=state[key]?.winner;if(!oldWinner&&newWinner){const winnerIndex=data.players.findIndex(p=>p.name===newWinner);if(winnerIndex>=0){if(key==="whot"||key==="ludo"||key==="ayo"||key==="pool"||key==="chess"){state.gameScores[key]=Array.isArray(state.gameScores[key])?state.gameScores[key]:[0,0];state.gameScores[key][winnerIndex]=(state.gameScores[key][winnerIndex]||0)+1;}else state.scores[winnerIndex]=(state.scores[winnerIndex]||0)+1;}}}tx.update(ref,{state});});}
+ try{await runTransaction(db,async tx=>{
+  const ref=doc(db,"coupleRooms",startingRoomId),snap=await tx.get(ref);
+  if(!snap.exists())throw Error("Room not found.");
+  const data=snap.data(),oldState=structuredClone(data.state),state=structuredClone(data.state);
+  fn(state,data);
+  if(optimisticState&&optimisticState.whot&&state.whot){
+   for(const key of ["lastMove","lastDraw"]){
+    const a=optimisticState.whot[key],b=state.whot[key];
+    if(a&&b&&a.card&&b.card&&a.player===b.player&&a.card.s===b.card.s&&a.card.n===b.card.n&&(key!=="lastMove"||a.index===b.index))b.id=a.id;
+   }
+  }
+  state.scores=Array.isArray(state.scores)?state.scores:[0,0];
+  state.gameScores=state.gameScores&&typeof state.gameScores==="object"?state.gameScores:{};
+  for(const key of ["whot","ludo","ttt","snakes","ayo","pool","chess"]){
+   const oldWinner=oldState[key]?.winner,newWinner=state[key]?.winner;
+   if(!oldWinner&&newWinner&&newWinner!=="DRAW"){
+    let winnerIndex=data.players.findIndex(p=>p.name===newWinner);
+    if(winnerIndex<0&&Number.isInteger(state[key]?.winnerIndex))winnerIndex=state[key].winnerIndex;
+    if(winnerIndex>=0&&winnerIndex<2){
+     state.scores[winnerIndex]=(state.scores[winnerIndex]||0)+1;
+     state.gameScores[key]=Array.isArray(state.gameScores[key])?state.gameScores[key]:[0,0];
+     state.gameScores[key][winnerIndex]=(state.gameScores[key][winnerIndex]||0)+1;
+    }
+   }
+  }
+  tx.update(ref,{state});
+ });}
  catch(e){if(optimisticState&&roomId===startingRoomId&&room?.state===optimisticState){room=startingRoom;say(e.message);if(gameOpen)renderGame();}else say(e.message);}
 }
 function cardLabel(c){return c.s===5?"20":String(c.n);}
