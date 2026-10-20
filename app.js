@@ -404,8 +404,12 @@ function whotFace(c,caption){
  return '<span class="card-corner top">'+esc(n)+'</span><span class="shape">'+esc(cardShape(c))+'</span><span class="card-caption">'+esc(special?"WHOT!":caption||shapeNames[c.s])+'</span><span class="card-corner bottom">'+esc(n)+'</span>';
 }
 function drawWhotCard(g){
+ // Random market draw: never inspect the player hand or seek a matching card.
+ if(!Array.isArray(g.deck))g.deck=[];
  if(!g.deck.length&&g.discard.length){g.deck=shuffle(g.discard);g.discard=[];}
- return g.deck.length?g.deck.pop():null;
+ if(!g.deck.length)return null;
+ const index=Math.floor(Math.random()*g.deck.length);
+ return g.deck.splice(index,1)[0]||null;
 }
 function recordWhotDraw(g,card,player){if(card)g.lastDraw={id:String(Date.now())+"-"+Math.random().toString(36).slice(2),card:{...card},player};}
 function whotCanPlay(c,g){
