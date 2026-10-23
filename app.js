@@ -351,6 +351,7 @@ function enterRoom(c){
  unsubscribe=onSnapshot(doc(db,"coupleRooms",c),snap=>{if(!snap.exists())return say("Room no longer exists.");room=snap.data();activeGame=room.activeGame||"whot";syncVoiceChat(room).catch(e=>{console.warn("Voice chat setup failed",e);setVoiceStatus("Voice connection unavailable");});notifyIncomingWhotMessage(room);renderRoom();const launch=room.gameLaunchId||null;if(!roomSnapshotInitialized){gameLaunchId=launch;roomSnapshotInitialized=true;if(launch){gameOpen=true;document.querySelector(".games").classList.add("hidden");$("gameArea").classList.remove("hidden");}}else if(launch&&launch!==gameLaunchId){gameLaunchId=launch;gameOpen=true;document.querySelector(".games").classList.add("hidden");$("gameArea").classList.remove("hidden");renderGame();}if(gameOpen)renderGame();},e=>say("Live sync error: "+e.message));
  $("roomSection").scrollIntoView({behavior:"smooth",block:"start"});
 }
+window.addEventListener("pagehide",()=>{try{if(voicePc)voicePc.close();if(voiceLocalStream)voiceLocalStream.getTracks().forEach(track=>track.stop());}catch(e){}});
 function setVoiceStatus(message){
  const el=$("voiceStatus");if(el)el.textContent=message;
 }
