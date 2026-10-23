@@ -6,6 +6,12 @@ service cloud.firestore {
       // Before a public launch, add strict player-membership checks and validate game-state updates.
       allow read, write: if request.auth != null
         && roomId.matches('^[A-Z0-9]{6}$');
+
+      // WebRTC exchanges ICE connection candidates through this room-scoped subcollection.
+      match /voiceCandidates/{candidateId} {
+        allow read, write: if request.auth != null
+          && roomId.matches('^[A-Z0-9]{6}$');
+      }
     }
   }
 }
