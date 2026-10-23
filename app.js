@@ -1,6 +1,7 @@
-let initializeApp, getAuth, signInAnonymously, getFirestore, doc, setDoc, getDoc, onSnapshot, runTransaction, serverTimestamp, firebaseConfig;
+let initializeApp, getAuth, signInAnonymously, getFirestore, doc, setDoc, getDoc, onSnapshot, runTransaction, serverTimestamp, collection, addDoc, updateDoc, firebaseConfig;
 const $ = id => document.getElementById(id);
 let db = null, auth = null, roomId = null, playerId = null, room = null, unsubscribe = null, activeGame = "whot", gameOpen = false, gameLaunchId = null, roomSnapshotInitialized = false, botThinking = false;
+let voicePc=null, voiceLocalStream=null, voiceRemoteAudio=null, voiceCandidateUnsubscribe=null, voicePeerSessionId=null, voiceRoomId=null, voiceRole=null, voiceHandledSdp=null, voiceQueuedCandidates=[], voiceMicMuted=false, voiceSpeakerMuted=false, voiceStarting=false;
 let chessSelectedSquare=null,chessPendingPromotion=null,chessBoardFlipped=false;
 let lastWhotMoveSeen = null, lastWhotDrawSeen = null, pendingWhotMoveAnimation = null, pendingWhotDrawAnimation = null, whotAnimatedMoveIds = new Set(), whotAnimatedDrawIds = new Set();
 let lastWhotReactionSeen = null, whotInboxOpen = false, lastWhotChatSeen = null, whotChatInitialized = false;
@@ -325,7 +326,7 @@ async function init(){
    import("https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js"),
    import("./firebase-config.js")
   ]);
-  initializeApp=am.initializeApp;getAuth=au.getAuth;signInAnonymously=au.signInAnonymously;getFirestore=fs.getFirestore;doc=fs.doc;setDoc=fs.setDoc;getDoc=fs.getDoc;onSnapshot=fs.onSnapshot;runTransaction=fs.runTransaction;serverTimestamp=fs.serverTimestamp;firebaseConfig=cf.firebaseConfig;
+  initializeApp=am.initializeApp;getAuth=au.getAuth;signInAnonymously=au.signInAnonymously;getFirestore=fs.getFirestore;doc=fs.doc;setDoc=fs.setDoc;getDoc=fs.getDoc;onSnapshot=fs.onSnapshot;runTransaction=fs.runTransaction;serverTimestamp=fs.serverTimestamp;collection=fs.collection;addDoc=fs.addDoc;updateDoc=fs.updateDoc;firebaseConfig=cf.firebaseConfig;
   if(!configOK()){$("connectionStatus").innerHTML="Setup needed<br>Firebase not connected";$("setupMessage").textContent="Firebase settings are missing or incomplete in firebase-config.js.";return;}
   const app=initializeApp(firebaseConfig);auth=getAuth(app);db=getFirestore(app);if(!auth.currentUser)await signInAnonymously(auth);
   $("connectionStatus").innerHTML="Firebase ready<br>Signed in anonymously";$("setupMessage").textContent="Firebase connected. Create a room and share the code with your partner.";
@@ -347,9 +348,114 @@ async function joinRoom(){
 }
 function enterRoom(c){
  roomId=c;saveSession({roomId:c,playerId,name:playerName(),autoResume:true});gameOpen=false;gameLaunchId=null;roomSnapshotInitialized=false;$("setupPanel").classList.add("hidden");$("roomSection").classList.remove("hidden");$("roomCodeDisplay").textContent=c;document.querySelector(".games").classList.remove("hidden");$("gameArea").classList.add("hidden");if(unsubscribe)unsubscribe();
- unsubscribe=onSnapshot(doc(db,"coupleRooms",c),snap=>{if(!snap.exists())return say("Room no longer exists.");room=snap.data();activeGame=room.activeGame||"whot";notifyIncomingWhotMessage(room);renderRoom();const launch=room.gameLaunchId||null;if(!roomSnapshotInitialized){gameLaunchId=launch;roomSnapshotInitialized=true;if(launch){gameOpen=true;document.querySelector(".games").classList.add("hidden");$("gameArea").classList.remove("hidden");}}else if(launch&&launch!==gameLaunchId){gameLaunchId=launch;gameOpen=true;document.querySelector(".games").classList.add("hidden");$("gameArea").classList.remove("hidden");renderGame();}if(gameOpen)renderGame();},e=>say("Live sync error: "+e.message));
+ unsubscribe=onSnapshot(doc(db,"coupleRooms",c),snap=>{if(!snap.exists())return say("Room no longer exists.");room=snap.data();activeGame=room.activeGame||"whot";syncVoiceChat(room).catch(e=>{console.warn("Voice chat setup failed",e);setVoiceStatus("Voice connection unavailable");});notifyIncomingWhotMessage(room);renderRoom();const launch=room.gameLaunchId||null;if(!roomSnapshotInitialized){gameLaunchId=launch;roomSnapshotInitialized=true;if(launch){gameOpen=true;document.querySelector(".games").classList.add("hidden");$("gameArea").classList.remove("hidden");}}else if(launch&&launch!==gameLaunchId){gameLaunchId=launch;gameOpen=true;document.querySelector(".games").classList.add("hidden");$("gameArea").classList.remove("hidden");renderGame();}if(gameOpen)renderGame();},e=>say("Live sync error: "+e.message));
  $("roomSection").scrollIntoView({behavior:"smooth",block:"start"});
 }
+function setVoiceStatus(message){
+ const el=$("voiceStatus");if(el)el.textContent=message;
+}
+function renderVoiceButtons(){
+ const mic=$("voiceMicToggle"),speaker=$("voiceSpeakerToggle");
+ if(mic){mic.textContent=voiceMicMuted?"🎙️ Mic off":"🎙️ Mic on";mic.classList.toggle("voice-muted",voiceMicMuted);mic.setAttribute("aria-pressed",String(voiceMicMuted));}
+ if(speaker){speaker.textContent=voiceSpeakerMuted?"🔇 Hear partner: off":"🔊 Hear partner: on";speaker.classList.toggle("voice-muted",voiceSpeakerMuted);speaker.setAttribute("aria-pressed",String(voiceSpeakerMuted));}
+}
+function cleanupVoiceChat(status="Waiting for your partner…"){
+ if(voiceCandidateUnsubscribe){voiceCandidateUnsubscribe();voiceCandidateUnsubscribe=null;}
+ if(voicePc){try{voicePc.onicecandidate=null;voicePc.ontrack=null;voicePc.close();}catch(e){}voicePc=null;}
+ if(voiceLocalStream){voiceLocalStream.getTracks().forEach(t=>t.stop());voiceLocalStream=null;}
+ if(voiceRemoteAudio){voiceRemoteAudio.srcObject=null;}
+ voicePeerSessionId=null;voiceRoomId=null;voiceRole=null;voiceHandledSdp=null;voiceQueuedCandidates=[];voiceStarting=false;voiceMicMuted=false;voiceSpeakerMuted=false;renderVoiceButtons();setVoiceStatus(status);
+}
+async function syncVoiceChat(currentRoom){
+ if(!db||!roomId||!playerId)return;
+ const players=Array.isArray(currentRoom?.players)?currentRoom.players:[];
+ const humanPlayers=players.filter(p=>!p.isBot);
+ if(humanPlayers.length<2){if(voicePc||voiceStarting)cleanupVoiceChat("Waiting for your partner to enter…");else setVoiceStatus("Voice chat starts when both of you are in the room");return;}
+ const ordered=humanPlayers.slice(0,2);
+ const sessionId=ordered.map(p=>p.id).join("_");
+ const isOfferer=ordered[0].id===playerId;
+ if(voicePeerSessionId&&voicePeerSessionId!==sessionId)cleanupVoiceChat("Reconnecting voice…");
+ if(!isOfferer&&currentRoom?.voice?.sessionId!==sessionId){setVoiceStatus("Your partner is connecting voice…");return;}
+ if(voicePeerSessionId===sessionId&&voicePc){
+   if(isOfferer&&currentRoom?.voice?.answer&&!voicePc.remoteDescription){
+     try{await voicePc.setRemoteDescription(new RTCSessionDescription(currentRoom.voice.answer));voiceHandledSdp="answer";await flushVoiceCandidates();}catch(e){console.warn("Could not apply voice answer",e);}
+   }else if(!isOfferer&&currentRoom?.voice?.offer&&!voicePc.remoteDescription){
+     try{await voicePc.setRemoteDescription(new RTCSessionDescription(currentRoom.voice.offer));voiceHandledSdp="offer";await flushVoiceCandidates();const answer=await voicePc.createAnswer();await voicePc.setLocalDescription(answer);await updateDoc(doc(db,"coupleRooms",roomId),{"voice.answer":{type:answer.type,sdp:answer.sdp}});setVoiceStatus("Connecting to your partner…");}catch(e){console.warn("Could not answer voice call",e);setVoiceStatus("Could not connect voice");}
+   }
+   return;
+ }
+ if(voiceStarting)return;
+ voiceStarting=true;voicePeerSessionId=sessionId;voiceRoomId=roomId;voiceRole=isOfferer?"offerer":"answerer";voiceQueuedCandidates=[];voiceHandledSdp=null;
+ try{
+   setVoiceStatus("Requesting microphone permission…");
+   voiceLocalStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true},video:false});
+   if(voiceRoomId!==roomId||voicePeerSessionId!==sessionId){cleanupVoiceChat("Voice room changed");return;}
+   voiceRemoteAudio=$("voiceRemoteAudio");
+   voicePc=new RTCPeerConnection({iceServers:[{urls:"stun:stun.l.google.com:19302"},{urls:"stun:stun1.l.google.com:19302"}]});
+   voiceLocalStream.getTracks().forEach(track=>voicePc.addTrack(track,voiceLocalStream));
+   voicePc.ontrack=event=>{
+     if(!voiceRemoteAudio)return;
+     voiceRemoteAudio.srcObject=event.streams[0];
+     voiceRemoteAudio.muted=voiceSpeakerMuted;
+     voiceRemoteAudio.play().then(()=>setVoiceStatus("Voice connected ❤️")).catch(()=>setVoiceStatus("Voice connected — tap “Hear partner” to enable sound"));
+   };
+   voicePc.onicecandidate=async event=>{
+     if(!event.candidate||!voiceRoomId||!voicePeerSessionId)return;
+     try{await addDoc(collection(db,"coupleRooms",voiceRoomId,"voiceCandidates"),{sessionId:voicePeerSessionId,from:playerId,to:ordered.find(p=>p.id!==playerId)?.id||"",candidate:event.candidate.toJSON(),createdAt:Date.now()});}catch(e){console.warn("Voice ICE signal failed",e);}
+   };
+   voicePc.onconnectionstatechange=()=>{
+     if(!voicePc)return;
+     const state=voicePc.connectionState;
+     if(state==="connected")setVoiceStatus("Voice connected ❤️");
+     else if(state==="connecting")setVoiceStatus("Connecting to your partner…");
+     else if(state==="failed")setVoiceStatus("Connection failed — check your internet");
+   };
+   voiceCandidateUnsubscribe=onSnapshot(collection(db,"coupleRooms",roomId,"voiceCandidates"),snapshot=>{
+     snapshot.docChanges().forEach(change=>{
+       if(change.type!=="added")return;
+       const data=change.doc.data();
+       if(data.sessionId!==sessionId||data.to!==playerId||!data.candidate)return;
+       const candidate=new RTCIceCandidate(data.candidate);
+       if(voicePc?.remoteDescription)voicePc.addIceCandidate(candidate).catch(e=>console.warn("ICE candidate rejected",e));
+       else voiceQueuedCandidates.push(candidate);
+     });
+   },e=>console.warn("Voice ICE listener failed",e));
+   if(isOfferer){
+     await updateDoc(doc(db,"coupleRooms",roomId),{"voice.sessionId":sessionId});
+     const offer=await voicePc.createOffer();await voicePc.setLocalDescription(offer);
+     await updateDoc(doc(db,"coupleRooms",roomId),{"voice.offer":{type:offer.type,sdp:offer.sdp},"voice.answer":null});
+     setVoiceStatus("Calling your partner…");
+   }else{
+     const latest=(await getDoc(doc(db,"coupleRooms",roomId))).data();
+     if(latest?.voice?.offer){
+       await voicePc.setRemoteDescription(new RTCSessionDescription(latest.voice.offer));voiceHandledSdp="offer";
+       await flushVoiceCandidates();
+       const answer=await voicePc.createAnswer();await voicePc.setLocalDescription(answer);
+       await updateDoc(doc(db,"coupleRooms",roomId),{"voice.answer":{type:answer.type,sdp:answer.sdp}});
+     }else setVoiceStatus("Waiting for your partner’s voice signal…");
+   }
+ }catch(e){
+   console.warn("Voice chat could not start",e);
+   if(e?.name==="NotAllowedError"||e?.name==="PermissionDeniedError")setVoiceStatus("Allow microphone access in your browser settings");
+   else if(e?.name==="NotFoundError")setVoiceStatus("No microphone was found on this device");
+   else setVoiceStatus("Voice chat could not start: "+(e?.message||String(e)));
+   if(voicePc||voiceLocalStream)cleanupVoiceChat("Voice chat unavailable — re-enter the room to retry");
+ }finally{voiceStarting=false;}
+}
+async function flushVoiceCandidates(){
+ if(!voicePc?.remoteDescription||!voiceQueuedCandidates.length)return;
+ const queued=voiceQueuedCandidates.splice(0);
+ for(const candidate of queued){try{await voicePc.addIceCandidate(candidate);}catch(e){console.warn("Queued ICE candidate rejected",e);}}
+}
+function toggleVoiceMic(){
+ if(!voiceLocalStream){setVoiceStatus("Waiting for voice connection…");return;}
+ voiceMicMuted=!voiceMicMuted;voiceLocalStream.getAudioTracks().forEach(track=>track.enabled=!voiceMicMuted);renderVoiceButtons();
+}
+function toggleVoiceSpeaker(){
+ voiceSpeakerMuted=!voiceSpeakerMuted;if(voiceRemoteAudio)voiceRemoteAudio.muted=voiceSpeakerMuted;renderVoiceButtons();
+ if(!voiceSpeakerMuted&&voiceRemoteAudio)voiceRemoteAudio.play().then(()=>setVoiceStatus("Voice connected ❤️")).catch(()=>setVoiceStatus("Tap again to enable audio"));
+}
+
 function notifyIncomingWhotMessage(currentRoom){const chat=Array.isArray(currentRoom?.state?.whot?.chat)?currentRoom.state.whot.chat:[];const latest=chat.length?chat[chat.length-1]:null;if(!whotChatInitialized){whotChatInitialized=true;lastWhotChatSeen=latest?.id||null;return;}if(!latest||latest.id===lastWhotChatSeen)return;lastWhotChatSeen=latest.id;if(latest.player===me())return;const title=(latest.name||"Your partner")+" sent you a message 💌";if("Notification" in window&&Notification.permission==="granted"){try{const n=new Notification(title,{body:String(latest.text||"Open the Couple Game to reply"),tag:"couple-game-message"});n.onclick=()=>{window.focus();if(activeGame!=="whot"){activeGame="whot";gameOpen=true;renderGame();}whotInboxOpen=true;renderGame();n.close();};}catch(e){}}else{const oldTitle=document.title;document.title="💌 New message from "+(latest.name||"your partner");setTimeout(()=>{if(document.title.startsWith("💌 New message"))document.title=oldTitle;},5000);}}
 function renderRoom(){
  $("playerLine").textContent=room.players.map(p=>p.name).join(" ♥ ")+(room.players.length<2?" · waiting for your person":" · both players connected");
@@ -970,7 +1076,7 @@ function scheduleComputerTurn(){
  },650);
 }
 
-$("createRoom").onclick=createRoom;$("joinRoom").onclick=joinRoom;const playComputer=$("playComputer");if(playComputer)playComputer.onclick=addComputer;
+$("createRoom").onclick=createRoom;$("joinRoom").onclick=joinRoom;const voiceMicButton=$("voiceMicToggle");if(voiceMicButton)voiceMicButton.onclick=toggleVoiceMic;const voiceSpeakerButton=$("voiceSpeakerToggle");if(voiceSpeakerButton)voiceSpeakerButton.onclick=toggleVoiceSpeaker;const playComputer=$("playComputer");if(playComputer)playComputer.onclick=addComputer;
 function returnToGamePicker(ev){
  if(ev){ev.preventDefault();ev.stopPropagation();if(ev.stopImmediatePropagation)ev.stopImmediatePropagation();}
  gameOpen=false;
@@ -988,5 +1094,5 @@ document.addEventListener("click",function(ev){
 },true);
 document.querySelectorAll(".game").forEach(b=>b.onclick=async()=>{if(!roomId||!db)return say("Create or join a room before choosing a game.");try{await runTransaction(db,async tx=>{const ref=doc(db,"coupleRooms",roomId),snap=await tx.get(ref);if(!snap.exists())throw Error("Room not found.");const data=snap.data();const updates={activeGame:b.dataset.game,gameLaunchId:Date.now()+"-"+Math.random().toString(36).slice(2)};if(b.dataset.game==="chess"&&(!data.state||!data.state.chess))updates["state.chess"]={fen:"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",turn:"w",winner:"",status:"White to move",lastMove:null,moves:0,pgn:"",drawOffer:null};if(b.dataset.game==="pool"&&(!data.state||!data.state.pool))updates["state.pool"]=newPool();if(b.dataset.game==="ayo"&&(!data.state||!data.state.ayo))updates["state.ayo"]=newAyo();tx.update(ref,updates);});activeGame=b.dataset.game;gameOpen=true;document.querySelector(".games").classList.add("hidden");const area=$("gameArea");area.style.display="";area.classList.remove("hidden");renderGame();area.scrollIntoView({behavior:"smooth",block:"start"});}catch(e){say("Could not switch game: "+e.message);}});
 $("copyInvite").onclick=async()=>{try{await navigator.clipboard.writeText(roomId);say("Room code copied: "+roomId);}catch(e){say("Share this room code: "+roomId);}};
-$("leaveRoom").onclick=()=>{saveSession({autoResume:false});if(unsubscribe)unsubscribe();unsubscribe=null;roomId=null;room=null;playerId=null;gameOpen=false;gameLaunchId=null;roomSnapshotInitialized=false;$("gameArea").classList.add("hidden");document.querySelector(".games").classList.remove("hidden");$("roomSection").classList.add("hidden");$("setupPanel").classList.remove("hidden");$("connectionStatus").innerHTML="Firebase ready<br>Not in a room yet";window.scrollTo({top:0,behavior:"smooth"});};
+$("leaveRoom").onclick=()=>{cleanupVoiceChat("You left the room");saveSession({autoResume:false});if(unsubscribe)unsubscribe();unsubscribe=null;roomId=null;room=null;playerId=null;gameOpen=false;gameLaunchId=null;roomSnapshotInitialized=false;$("gameArea").classList.add("hidden");document.querySelector(".games").classList.remove("hidden");$("roomSection").classList.add("hidden");$("setupPanel").classList.remove("hidden");$("connectionStatus").innerHTML="Firebase ready<br>Not in a room yet";window.scrollTo({top:0,behavior:"smooth"});};
 init();
